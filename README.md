@@ -1,26 +1,35 @@
 # rlukenbaugh-homepage
 
-Static homepage project for `rlukenbaugh.org`.
+Production-target Next.js app for `rlukenbaugh.org`.
 
-## Files
+## What it includes
 
-- `index.html` - main landing page
-- `vercel.json` - minimal Vercel configuration
+- Live forecast search with imperial units
+- Clerk-based sign-up and sign-in routes
+- Free plus Pro pricing only
+- Stripe subscription checkout route
+- Stripe customer portal route
+- Stripe webhook handler for syncing billing state back into account metadata
+- Protected dashboard and account pages
 
-## Deploy on Vercel
+## Local setup
 
-1. Push this folder to a GitHub repository.
-2. Import the repository into Vercel as a new project.
-3. Add these domains in Vercel:
-   - `rlukenbaugh.org`
-   - `www.rlukenbaugh.org`
-4. Move product apps to their own subdomains:
-   - `flights.rlukenbaugh.org`
-   - `drone.rlukenbaugh.org`
-   - `osint.rlukenbaugh.org`
-   - `weather.rlukenbaugh.org`
-   - `pricing.rlukenbaugh.org`
+1. Copy `.env.example` to `.env.local`
+2. Add Clerk keys
+3. Add Stripe keys and a `STRIPE_PRICE_PRO_MONTHLY`
+4. For a paid public launch, use a commercial weather endpoint or API key instead of the public Open-Meteo endpoint
 
-## Important
+## Commands
 
-If `rlukenbaugh.org` is currently attached to another Vercel project, move that project to its own subdomain first before assigning the root domain to this homepage project.
+```bash
+pnpm install
+pnpm dev
+pnpm lint
+pnpm build
+```
+
+## Notes
+
+- The app is wired for a single `Pro` plan. `Team` has been intentionally removed.
+- The public Open-Meteo endpoint is acceptable for development and UI testing, but paid commercial use should switch to a licensed commercial endpoint before launch.
+- Subscription state is synced into Clerk private metadata so the MVP can ship without a separate database layer.
