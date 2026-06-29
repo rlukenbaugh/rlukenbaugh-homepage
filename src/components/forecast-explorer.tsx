@@ -100,9 +100,14 @@ export function ForecastExplorer({
           <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Temp</p>
-              <p className="mt-2 text-[clamp(2rem,4vw,2.75rem)] font-semibold leading-none tracking-[-0.04em] text-white">
-                {forecast.current.tempF}°F
-              </p>
+              <div className="mt-2 flex items-start gap-1 text-white">
+                <span className="text-[clamp(1.9rem,3.6vw,2.6rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+                  {forecast.current.tempF}
+                </span>
+                <span className="pt-1 text-sm font-semibold tracking-[0.14em] text-white/80">
+                  {"\u00B0F"}
+                </span>
+              </div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Wind</p>
@@ -140,9 +145,14 @@ export function ForecastExplorer({
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {window.timeLabel}
                 </p>
-                <p className="mt-2 overflow-hidden text-[clamp(2.1rem,2.5vw,2.8rem)] font-semibold leading-none tracking-[-0.05em] whitespace-nowrap text-white">
-                  {window.tempF}°F
-                </p>
+                <div className="mt-2 flex items-start gap-1 overflow-hidden text-white">
+                  <span className="text-[clamp(1.85rem,2.15vw,2.4rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+                    {window.tempF}
+                  </span>
+                  <span className="pt-1 text-xs font-semibold tracking-[0.14em] text-white/80">
+                    {"\u00B0F"}
+                  </span>
+                </div>
                 <p className="mt-2 text-sm text-slate-300">Wind {window.windMph} mph</p>
                 <p className="text-sm text-slate-300">Gust {window.gustMph} mph</p>
               </button>
