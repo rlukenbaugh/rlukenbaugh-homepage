@@ -1,0 +1,73 @@
+# Launch Checklist
+
+Use this when turning `rlukenbaugh.org` into the live Sky Ready paid app.
+
+## 1. Vercel Project
+
+- Connect the GitHub repo `rlukenbaugh/rlukenbaugh-homepage` to Vercel.
+- Confirm the production domain is:
+  - `rlukenbaugh.org`
+  - `www.rlukenbaugh.org`
+
+## 2. Environment Variables
+
+Add these in Vercel for the Production environment:
+
+- `NEXT_PUBLIC_APP_URL=https://rlukenbaugh.org`
+- `CLERK_SECRET_KEY=...`
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...`
+- `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`
+- `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up`
+- `STRIPE_SECRET_KEY=...`
+- `STRIPE_PRICE_PRO_MONTHLY=price_...`
+- `STRIPE_WEBHOOK_SECRET=...`
+- `OPEN_METEO_API_KEY=...` if using a commercial Open-Meteo endpoint
+- `OPEN_METEO_FORECAST_BASE_URL=...` if your paid endpoint differs
+- `OPEN_METEO_GEOCODING_BASE_URL=...` if your paid endpoint differs
+
+## 3. Clerk Setup
+
+- Create or open the Clerk app for `rlukenbaugh.org`.
+- Set allowed redirect/base URLs to `https://rlukenbaugh.org`.
+- Verify:
+  - sign-up route is `/sign-up`
+  - sign-in route is `/sign-in`
+- Enable the auth methods you want to support at launch.
+
+## 4. Stripe Setup
+
+- Create the monthly `Pro` product and price in Stripe.
+- Copy the Stripe price ID into `STRIPE_PRICE_PRO_MONTHLY`.
+- Create a webhook endpoint pointing to:
+  - `https://rlukenbaugh.org/api/webhooks/stripe`
+- Subscribe the webhook to at least:
+  - `checkout.session.completed`
+  - `customer.subscription.created`
+  - `customer.subscription.updated`
+  - `customer.subscription.deleted`
+
+## 5. Weather Provider
+
+- Development currently works with the public Open-Meteo endpoint.
+- Before charging customers, switch to a licensed commercial weather/data plan.
+- Re-test forecast lookup after adding the production weather credentials.
+
+## 6. Production Smoke Test
+
+Run these in production after deploy:
+
+1. Open `https://rlukenbaugh.org`
+2. Search a location and confirm live forecast data loads
+3. Open `/pricing`
+4. Create an account with Clerk
+5. Start the `Pro` trial
+6. Complete Stripe Checkout
+7. Confirm webhook sync updates the account/dashboard state
+8. Open the Stripe customer portal from the app
+9. Cancel or manage the subscription and confirm state changes flow back
+
+## 7. Go-Live Callouts
+
+- The app currently supports `Free` and `Pro` only.
+- `Team` pricing has been intentionally removed.
+- If Clerk or Stripe secrets are missing, the app shows setup fallbacks instead of a full live auth flow.
