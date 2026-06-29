@@ -17,12 +17,12 @@ function statusClasses(status: ForecastPayload["current"]["suitability"]) {
 
 export function ForecastExplorer({
   initialForecast,
+  initialQuery,
 }: {
   initialForecast: ForecastPayload;
+  initialQuery: string;
 }) {
-  const [query, setQuery] = useState(
-    `${initialForecast.location.name}, ${initialForecast.location.region}`,
-  );
+  const [query, setQuery] = useState(initialQuery);
   const [forecast, setForecast] = useState(initialForecast);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [pending, setPending] = useState(false);
@@ -133,7 +133,7 @@ export function ForecastExplorer({
           <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-8">
             {forecast.windows.map((window, index) => (
               <button
-                className={`min-w-0 rounded-2xl border p-3 text-left transition ${
+                className={`flex min-w-0 flex-col rounded-2xl border p-3 text-left transition ${
                   index === selectedIndex
                     ? "border-cyan-300 bg-cyan-400/12 shadow-[0_0_0_1px_rgba(90,216,255,0.2)]"
                     : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05]"
@@ -142,14 +142,14 @@ export function ForecastExplorer({
                 onClick={() => setSelectedIndex(index)}
                 type="button"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                <p className="min-h-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {window.timeLabel}
                 </p>
-                <div className="mt-2 flex items-start gap-1 overflow-hidden text-white">
-                  <span className="text-[clamp(1.85rem,2.15vw,2.4rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+                <div className="mt-2 flex min-h-[2.65rem] items-start gap-0.5 text-white">
+                  <span className="text-[clamp(1.7rem,2vw,2.25rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums">
                     {window.tempF}
                   </span>
-                  <span className="pt-1 text-xs font-semibold tracking-[0.14em] text-white/80">
+                  <span className="shrink-0 pt-1 text-[0.65rem] font-semibold tracking-[0.12em] text-white/80">
                     {"\u00B0F"}
                   </span>
                 </div>

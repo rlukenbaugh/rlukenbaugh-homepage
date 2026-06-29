@@ -108,7 +108,10 @@ export default async function HomePage() {
         </section>
 
         <section className="pb-14" id="forecast">
-          <ForecastExplorer initialForecast={forecast} />
+          <ForecastExplorer
+            initialForecast={forecast}
+            initialQuery={siteConfig.defaultLocationQuery}
+          />
         </section>
 
         <section className="grid gap-4 pb-14 md:grid-cols-3">

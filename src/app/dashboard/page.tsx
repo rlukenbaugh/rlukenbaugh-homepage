@@ -97,7 +97,10 @@ export default async function DashboardPage() {
           />
         </section>
 
-        <ForecastExplorer initialForecast={forecast} />
+        <ForecastExplorer
+          initialForecast={forecast}
+          initialQuery={siteConfig.defaultLocationQuery}
+        />
       </div>
     </main>
   );

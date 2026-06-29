@@ -144,17 +144,16 @@ function assessSuitability(input: {
   return "good" as const;
 }
 
-function formatHourLabel(timeIso: string, timezone: string, index: number) {
-  const date = new Date(`${timeIso}:00`);
-
+function formatHourLabel(timeIso: string, index: number) {
   if (index === 0) {
     return "Now";
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    hour: "numeric",
-  }).format(date);
+  const hourValue = Number(timeIso.split("T")[1]?.split(":")[0] || "0");
+  const normalizedHour = hourValue % 12 || 12;
+  const meridiem = hourValue >= 12 ? "PM" : "AM";
+
+  return `${normalizedHour} ${meridiem}`;
 }
 
 function findStartingIndex(timezone: string, times: string[]) {
@@ -232,7 +231,7 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
 
     return {
       timeIso: time,
-      timeLabel: formatHourLabel(time, timezone, index),
+      timeLabel: formatHourLabel(time, index),
       tempF: round(forecast.hourly.temperature_2m[sourceIndex] || 0),
       windMph,
       gustMph,
