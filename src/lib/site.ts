@@ -1,7 +1,7 @@
 export const siteConfig = {
-  name: "Sky Ready",
-  domain: "https://rlukenbaugh.org",
-  appName: "Sky Ready Pro",
+  name: "Skies Ready",
+  domain: "https://skiesready.com",
+  appName: "Skies Ready Pro",
   supportEmail: "contact@rlukenbaugh.org",
   defaultLocationQuery: "Enid, Oklahoma 73701",
   providerName: "Open-Meteo",

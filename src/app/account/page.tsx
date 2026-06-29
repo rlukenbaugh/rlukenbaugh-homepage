@@ -8,7 +8,7 @@ import { getViewerSubscriptionState } from "@/lib/subscription";
 
 export const metadata: Metadata = {
   title: "Account",
-  description: "Sky Ready account and billing settings.",
+  description: "Skies Ready account and billing settings.",
 };
 
 export default async function AccountPage() {
@@ -63,7 +63,7 @@ export default async function AccountPage() {
               Identity
             </p>
             <h2 className="mt-3 text-2xl font-semibold text-white">
-              {user?.fullName || user?.primaryEmailAddress?.emailAddress || "Sky Ready user"}
+              {user?.fullName || user?.primaryEmailAddress?.emailAddress || "Skies Ready user"}
             </h2>
             <p className="mt-2 text-sm text-slate-300">
               {user?.primaryEmailAddress?.emailAddress || "Email address available after Clerk setup"}

@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://rlukenbaugh.org"),
+  metadataBase: new URL("https://skiesready.com"),
   title: {
-    default: "Sky Ready | Drone Flight Forecast",
-    template: "%s | Sky Ready",
+    default: "Skies Ready | Drone Flight Forecast",
+    template: "%s | Skies Ready",
   },
   description:
-    "Sky Ready helps drone pilots make safer go or no-go decisions with live forecast search, saved launch planning, and Pro-grade billing-ready account tooling.",
+    "Skies Ready helps drone pilots make safer go or no-go decisions with live forecast search, saved launch planning, and Pro-grade billing-ready account tooling.",
 };
 
 export default async function RootLayout({

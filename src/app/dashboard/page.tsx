@@ -10,7 +10,7 @@ import { isClerkConfigured, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Dashboard",
-  description: "Protected Sky Ready user dashboard.",
+  description: "Protected Skies Ready user dashboard.",
 };
 
 export default async function DashboardPage() {

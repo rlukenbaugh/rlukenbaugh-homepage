@@ -26,7 +26,7 @@ export default async function HomePage() {
               </span>
               <span>
                 <span className="block text-lg font-semibold tracking-tight text-white">
-                  Sky Ready
+                  Skies Ready
                 </span>
                 <span className="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
                   Drone flight forecast
@@ -69,8 +69,8 @@ export default async function HomePage() {
               Turn drone launch decisions into a subscription product pilots can trust.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-              Sky Ready combines live forecast search, protected user accounts, and Stripe-backed
-              Pro billing so `rlukenbaugh.org` can evolve from demo shell to a real launch-ready
+              Skies Ready combines live forecast search, protected user accounts, and Stripe-backed
+              Pro billing so `skiesready.com` can evolve from demo shell to a real launch-ready
               product.
             </p>
 

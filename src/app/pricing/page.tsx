@@ -6,7 +6,7 @@ import { getViewerSubscriptionState } from "@/lib/subscription";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Free and Pro pricing for Sky Ready drone forecast planning.",
+  description: "Free and Pro pricing for Skies Ready drone forecast planning.",
 };
 
 export default async function PricingPage() {
@@ -18,7 +18,7 @@ export default async function PricingPage() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link className="text-sm font-semibold text-cyan-200 hover:text-cyan-100" href="/">
-            ← Back to forecast
+            {"<- Back to forecast"}
           </Link>
           <div className="flex gap-3">
             <Link
@@ -38,7 +38,7 @@ export default async function PricingPage() {
             One paid plan, built for a clean first launch
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">
-            Sky Ready now focuses on a simple `Free` plus `Pro` structure so registration and
+            Skies Ready now focuses on a simple `Free` plus `Pro` structure so registration and
             billing can be tested without the extra product complexity of team administration.
           </p>
         </section>

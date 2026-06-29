@@ -1,8 +1,8 @@
 {
   "name": "rlukenbaugh-homepage",
   "version": "0.1.0",
-  "description": "Sky Ready production web app for rlukenbaugh.org with live forecast search, Clerk auth, and Stripe Pro subscriptions.",
-  "homepage": "https://rlukenbaugh.org",
+  "description": "Skies Ready production web app for skiesready.com with live forecast search, Clerk auth, and Stripe Pro subscriptions.",
+  "homepage": "https://skiesready.com",
   "repository": {
     "type": "git",
     "url": "https://github.com/rlukenbaugh/rlukenbaugh-homepage.git"

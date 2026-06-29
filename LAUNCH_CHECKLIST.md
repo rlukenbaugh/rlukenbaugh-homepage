@@ -1,19 +1,19 @@
 # Launch Checklist
 
-Use this when turning `rlukenbaugh.org` into the live Sky Ready paid app.
+Use this when turning `skiesready.com` into the live Skies Ready paid app.
 
 ## 1. Vercel Project
 
 - Connect the GitHub repo `rlukenbaugh/rlukenbaugh-homepage` to Vercel.
 - Confirm the production domain is:
-  - `rlukenbaugh.org`
-  - `www.rlukenbaugh.org`
+  - `skiesready.com`
+  - `www.skiesready.com`
 
 ## 2. Environment Variables
 
 Add these in Vercel for the Production environment:
 
-- `NEXT_PUBLIC_APP_URL=https://rlukenbaugh.org`
+- `NEXT_PUBLIC_APP_URL=https://skiesready.com`
 - `CLERK_SECRET_KEY=...`
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...`
 - `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`
@@ -27,8 +27,8 @@ Add these in Vercel for the Production environment:
 
 ## 3. Clerk Setup
 
-- Create or open the Clerk app for `rlukenbaugh.org`.
-- Set allowed redirect/base URLs to `https://rlukenbaugh.org`.
+- Create or open the Clerk app for `skiesready.com`.
+- Set allowed redirect/base URLs to `https://skiesready.com`.
 - Verify:
   - sign-up route is `/sign-up`
   - sign-in route is `/sign-in`
@@ -39,7 +39,7 @@ Add these in Vercel for the Production environment:
 - Create the monthly `Pro` product and price in Stripe.
 - Copy the Stripe price ID into `STRIPE_PRICE_PRO_MONTHLY`.
 - Create a webhook endpoint pointing to:
-  - `https://rlukenbaugh.org/api/webhooks/stripe`
+  - `https://skiesready.com/api/webhooks/stripe`
 - Subscribe the webhook to at least:
   - `checkout.session.completed`
   - `customer.subscription.created`
@@ -56,7 +56,7 @@ Add these in Vercel for the Production environment:
 
 Run these in production after deploy:
 
-1. Open `https://rlukenbaugh.org`
+1. Open `https://skiesready.com`
 2. Search a location and confirm live forecast data loads
 3. Open `/pricing`
 4. Create an account with Clerk

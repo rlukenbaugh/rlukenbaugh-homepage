@@ -168,7 +168,7 @@ export function ForecastExplorer({
           <div className="mt-4 grid gap-3">
             <Metric label="Wind at launch" value={`${selectedWindow.windMph} mph`} />
             <Metric label="Wind at 80m" value={`${selectedWindow.wind80Mph} mph`} />
-            <Metric label="Gust spread" value={`${selectedWindow.gustMph - selectedWindow.windMph} mph`} />
+            <Metric label="Gust speed" value={`${selectedWindow.gustMph} mph`} />
             <Metric label="Visibility" value={`${selectedWindow.visibilityMiles} mi`} />
             <Metric label="Precip chance" value={`${selectedWindow.precipProbability}%`} />
             <Metric label="Cloud cover" value={`${selectedWindow.cloudCover}%`} />

@@ -1,6 +1,6 @@
 # rlukenbaugh-homepage
 
-Production-target Next.js app for `rlukenbaugh.org`.
+Production-target Next.js app for `skiesready.com`.
 
 ## What it includes
 
