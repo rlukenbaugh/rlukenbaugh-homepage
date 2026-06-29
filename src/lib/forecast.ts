@@ -37,15 +37,17 @@ export type ForecastPayload = {
   updatedAt: string;
 };
 
+type GeocodeLocation = {
+  name: string;
+  admin1?: string;
+  country?: string;
+  timezone?: string;
+  latitude: number;
+  longitude: number;
+};
+
 type GeocodeResponse = {
-  results?: Array<{
-    name: string;
-    admin1?: string;
-    country?: string;
-    timezone?: string;
-    latitude: number;
-    longitude: number;
-  }>;
+  results?: GeocodeLocation[];
 };
 
 type ForecastResponse = {
@@ -173,7 +175,7 @@ function findStartingIndex(timezone: string, times: string[]) {
 
 export async function getForecastForQuery(query: string): Promise<ForecastPayload> {
   const attempts = [query, query.split(",")[0]?.trim()].filter(Boolean) as string[];
-  let location: GeocodeResponse["results"][number] | undefined;
+  let location: GeocodeLocation | undefined;
 
   for (const attempt of attempts) {
     const geocodeUrl = buildUrl(getGeocodingBaseUrl(), "/v1/search", {
