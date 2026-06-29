@@ -17,7 +17,7 @@ export const FREE_PLAN = {
 export const PRO_PLAN = {
   key: "pro" as const,
   name: "Pro",
-  price: "$29",
+  price: "$5.00",
   billingCopy: "per month after a 7-day trial",
   cta: "Start free trial",
   trialDays: 7,

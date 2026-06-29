@@ -100,7 +100,9 @@ export function ForecastExplorer({
           <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Temp</p>
-              <p className="mt-2 text-3xl font-semibold text-white">{forecast.current.tempF}°F</p>
+              <p className="mt-2 text-[clamp(2rem,4vw,2.75rem)] font-semibold leading-none tracking-[-0.04em] text-white">
+                {forecast.current.tempF}°F
+              </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Wind</p>
@@ -126,7 +128,7 @@ export function ForecastExplorer({
           <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-8">
             {forecast.windows.map((window, index) => (
               <button
-                className={`rounded-2xl border p-3 text-left transition ${
+                className={`min-w-0 rounded-2xl border p-3 text-left transition ${
                   index === selectedIndex
                     ? "border-cyan-300 bg-cyan-400/12 shadow-[0_0_0_1px_rgba(90,216,255,0.2)]"
                     : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05]"
@@ -138,7 +140,9 @@ export function ForecastExplorer({
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {window.timeLabel}
                 </p>
-                <p className="mt-2 text-3xl font-semibold text-white">{window.tempF}°F</p>
+                <p className="mt-2 overflow-hidden text-[clamp(2.1rem,2.5vw,2.8rem)] font-semibold leading-none tracking-[-0.05em] whitespace-nowrap text-white">
+                  {window.tempF}°F
+                </p>
                 <p className="mt-2 text-sm text-slate-300">Wind {window.windMph} mph</p>
                 <p className="text-sm text-slate-300">Gust {window.gustMph} mph</p>
               </button>
