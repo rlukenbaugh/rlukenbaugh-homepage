@@ -85,6 +85,14 @@ export default async function RootLayout({
           src="https://static.cloudflareinsights.com/beacon.min.js"
           strategy="afterInteractive"
         />
+        <Script
+          async
+          src="https://plausible.io/js/pa-bdBlNherzlQSxM8cVjkWP.js"
+          strategy="afterInteractive"
+        />
+        <Script id="plausible-init" strategy="afterInteractive">
+          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();`}
+        </Script>
         <Analytics />
         <SpeedInsights />
       </body>
