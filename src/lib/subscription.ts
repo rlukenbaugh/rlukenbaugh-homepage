@@ -1,4 +1,6 @@
+import Stripe from "stripe";
 import { isClerkConfigured } from "@/lib/site";
+import { getStripe } from "@/lib/stripe";
 
 export type SubscriptionTier = "free" | "pro";
 export type BillingStatus =
@@ -44,6 +46,45 @@ function normalizeBillingMetadata(raw: unknown): SubscriptionState {
   };
 }
 
+function normalizeStripeStatus(status: Stripe.Subscription.Status): BillingStatus {
+  return status === "trialing" ||
+    status === "active" ||
+    status === "past_due" ||
+    status === "canceled" ||
+    status === "unpaid"
+    ? status
+    : "inactive";
+}
+
+function deriveStateFromStripeSubscription(
+  current: SubscriptionState,
+  subscription: Stripe.Subscription,
+): SubscriptionState {
+  const activeLike =
+    subscription.status === "active" ||
+    subscription.status === "trialing" ||
+    subscription.status === "past_due";
+  const cancelAt =
+    subscription.cancel_at
+      ? new Date(subscription.cancel_at * 1000).toISOString()
+      : subscription.cancel_at_period_end
+        ? new Date(((subscription.trial_end as number | null) ?? 0) * 1000).toISOString()
+        : null;
+
+  return {
+    tier: activeLike ? "pro" : "free",
+    status: normalizeStripeStatus(subscription.status),
+    isPro: activeLike,
+    cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
+    cancelAt,
+    stripeCustomerId:
+      typeof subscription.customer === "string"
+        ? subscription.customer
+        : current.stripeCustomerId,
+    stripeSubscriptionId: subscription.id,
+  };
+}
+
 export async function getViewerSubscriptionState() {
   if (!isClerkConfigured()) {
     return null;
@@ -56,7 +97,30 @@ export async function getViewerSubscriptionState() {
     return null;
   }
 
-  return normalizeBillingMetadata((user.privateMetadata as Record<string, unknown>)?.billing);
+  const current = normalizeBillingMetadata((user.privateMetadata as Record<string, unknown>)?.billing);
+
+  if (!current.stripeSubscriptionId || !process.env.STRIPE_SECRET_KEY) {
+    return current;
+  }
+
+  try {
+    const stripe = getStripe();
+    const stripeSubscription = await stripe.subscriptions.retrieve(current.stripeSubscriptionId);
+    const reconciled = deriveStateFromStripeSubscription(current, stripeSubscription);
+
+    if (
+      reconciled.tier !== current.tier ||
+      reconciled.status !== current.status ||
+      reconciled.cancelAtPeriodEnd !== current.cancelAtPeriodEnd ||
+      reconciled.cancelAt !== current.cancelAt
+    ) {
+      await updateUserBillingMetadata(user.id, reconciled);
+    }
+
+    return reconciled;
+  } catch {
+    return current;
+  }
 }
 
 export async function updateUserBillingMetadata(
