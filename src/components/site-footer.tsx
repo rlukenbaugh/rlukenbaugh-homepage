@@ -15,17 +15,17 @@ export function SiteFooter() {
               operational weather checks in imperial units.
             </p>
           </div>
-          <nav className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2 md:grid-cols-4">
-            <Link className="hover:text-white" href="/support">
+          <nav className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-slate-300 md:max-w-sm md:justify-end">
+            <Link className="whitespace-nowrap hover:text-white" href="/support">
               Support
             </Link>
-            <Link className="hover:text-white" href="/privacy">
+            <Link className="whitespace-nowrap hover:text-white" href="/privacy">
               Privacy
             </Link>
-            <Link className="hover:text-white" href="/terms">
+            <Link className="whitespace-nowrap hover:text-white" href="/terms">
               Terms
             </Link>
-            <Link className="hover:text-white" href="/pricing">
+            <Link className="whitespace-nowrap hover:text-white" href="/pricing">
               Pricing
             </Link>
           </nav>
