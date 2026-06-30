@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Protected Skies Ready user dashboard.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   if (!isClerkConfigured()) {
     return <AuthSetupRequired />;

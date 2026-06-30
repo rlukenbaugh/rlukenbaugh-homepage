@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: "Skies Ready account and billing settings.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AccountPage() {
   if (!isClerkConfigured()) {
     return (
