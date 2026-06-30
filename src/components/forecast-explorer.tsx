@@ -309,13 +309,13 @@ export function ForecastExplorer({
               </p>
             </div>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
               {forecast.daily.map((day) => (
                 <article
                   className="rounded-2xl border border-white/10 bg-slate-950/35 p-4"
                   key={day.dateKey}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-3">
                     <div>
                       <div className="flex items-center gap-2">
                         <WeatherIcon className="h-4 w-4 text-cyan-200" iconKey={day.iconKey} />
@@ -327,7 +327,7 @@ export function ForecastExplorer({
                       <p className="mt-1 text-xs text-slate-400">{day.conditionLabel}</p>
                     </div>
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] ${statusClasses(
+                      className={`self-start rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] ${statusClasses(
                         day.suitability,
                       )}`}
                     >
@@ -335,8 +335,8 @@ export function ForecastExplorer({
                     </span>
                   </div>
 
-                  <div className="mt-4 flex items-end gap-2 text-white">
-                    <span className="text-3xl font-semibold leading-none tracking-[-0.05em] tabular-nums">
+                  <div className="mt-4 flex flex-wrap items-end gap-x-2 gap-y-1 text-white">
+                    <span className="text-[clamp(2.35rem,2.8vw,3rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums">
                       {day.highTempF}
                     </span>
                     <span className="pb-0.5 text-xs font-semibold tracking-[0.12em] text-white/80">
