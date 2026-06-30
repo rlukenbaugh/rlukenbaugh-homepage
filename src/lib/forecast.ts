@@ -15,6 +15,18 @@ export type ForecastWindow = {
   suitability: Suitability;
 };
 
+export type DailyForecast = {
+  dateKey: string;
+  dayLabel: string;
+  dateLabel: string;
+  highTempF: number;
+  lowTempF: number;
+  windMph: number;
+  gustMph: number;
+  precipProbability: number;
+  suitability: Suitability;
+};
+
 export type ForecastPayload = {
   location: {
     name: string;
@@ -32,6 +44,7 @@ export type ForecastPayload = {
     suitability: Suitability;
   };
   windows: ForecastWindow[];
+  daily: DailyForecast[];
   summary: string;
   providerNote: string;
   updatedAt: string;
@@ -196,6 +209,34 @@ function formatUtcOffset(offsetSeconds: number) {
   return `UTC${sign}${hours}:${minutes}`;
 }
 
+function shiftToLocalDate(timestamp: number, timezoneOffsetSeconds: number) {
+  return new Date((timestamp + timezoneOffsetSeconds) * 1000);
+}
+
+function getDateKey(timestamp: number, timezoneOffsetSeconds: number) {
+  const shiftedDate = shiftToLocalDate(timestamp, timezoneOffsetSeconds);
+  const year = shiftedDate.getUTCFullYear();
+  const month = String(shiftedDate.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(shiftedDate.getUTCDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatWeekdayLabel(timestamp: number, timezoneOffsetSeconds: number) {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    timeZone: "UTC",
+  }).format(shiftToLocalDate(timestamp, timezoneOffsetSeconds));
+}
+
+function formatShortDateLabel(timestamp: number, timezoneOffsetSeconds: number) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(shiftToLocalDate(timestamp, timezoneOffsetSeconds));
+}
+
 export async function getForecastForQuery(query: string): Promise<ForecastPayload> {
   if (!getWeatherApiKey()) {
     throw new Error("Weather API key is missing");
@@ -296,6 +337,67 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
     }),
   ];
 
+  const todayKey = getDateKey(current.dt, timezoneOffset);
+  const dailyMap = new Map<string, DailyForecast>();
+
+  dailyMap.set(todayKey, {
+    dateKey: todayKey,
+    dayLabel: "Today",
+    dateLabel: formatShortDateLabel(current.dt, timezoneOffset),
+    highTempF: round(current.main.temp || 0),
+    lowTempF: round(current.main.temp || 0),
+    windMph: currentWindMph,
+    gustMph: currentGustMph,
+    precipProbability: 0,
+    suitability: currentSuitability,
+  });
+
+  for (const entry of forecast.list) {
+    const dateKey = getDateKey(entry.dt, timezoneOffset);
+    const windMph = round(entry.wind?.speed || 0);
+    const gustMph = round(entry.wind?.gust || entry.wind?.speed || 0);
+    const precipProbability = round((entry.pop || 0) * 100);
+    const visibilityMiles = round(toMiles(entry.visibility || 0));
+    const suitability = assessSuitability({
+      windMph,
+      gustMph,
+      precipProbability,
+      visibilityMiles,
+    });
+
+    const existing = dailyMap.get(dateKey);
+
+    if (!existing) {
+      dailyMap.set(dateKey, {
+        dateKey,
+        dayLabel: dateKey === todayKey ? "Today" : formatWeekdayLabel(entry.dt, timezoneOffset),
+        dateLabel: formatShortDateLabel(entry.dt, timezoneOffset),
+        highTempF: round(entry.main.temp || 0),
+        lowTempF: round(entry.main.temp || 0),
+        windMph,
+        gustMph,
+        precipProbability,
+        suitability,
+      });
+      continue;
+    }
+
+    existing.highTempF = Math.max(existing.highTempF, round(entry.main.temp || 0));
+    existing.lowTempF = Math.min(existing.lowTempF, round(entry.main.temp || 0));
+    existing.windMph = Math.max(existing.windMph, windMph);
+    existing.gustMph = Math.max(existing.gustMph, gustMph);
+    existing.precipProbability = Math.max(existing.precipProbability, precipProbability);
+
+    if (
+      suitability === "risky" ||
+      (suitability === "caution" && existing.suitability === "good")
+    ) {
+      existing.suitability = suitability;
+    }
+  }
+
+  const daily = Array.from(dailyMap.values()).slice(0, 5);
+
   const locationLabel = [location.name, location.state, current.sys?.country || location.country]
     .filter(Boolean)
     .join(", ");
@@ -317,10 +419,11 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
       suitability: currentSuitability,
     },
     windows,
+    daily,
     summary: `Live forecast for ${locationLabel} with current conditions and upcoming 3-hour forecast windows in imperial units.`,
     providerNote:
       getWeatherApiKey()
-        ? "Live data from OpenWeatherMap. Forecast cards after Now use the provider's upcoming 3-hour windows on the current plan."
+        ? "Live data from OpenWeatherMap. Short-term cards use upcoming 3-hour windows, and daily cards summarize the next five forecast days on the current plan."
         : "OpenWeatherMap is not configured yet.",
     updatedAt: new Date(current.dt * 1000).toISOString(),
   };

@@ -158,6 +158,67 @@ export function ForecastExplorer({
               </button>
             ))}
           </div>
+
+          <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/80">
+                  Next 5 days
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-white">
+                  Daily highs, lows, wind, gust, and rain risk
+                </h3>
+              </div>
+              <p className="text-sm text-slate-300">
+                Built from the provider&apos;s rolling 3-hour forecast windows.
+              </p>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              {forecast.daily.map((day) => (
+                <article
+                  className="rounded-2xl border border-white/10 bg-slate-950/35 p-4"
+                  key={day.dateKey}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
+                        {day.dayLabel}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">{day.dateLabel}</p>
+                    </div>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] ${statusClasses(
+                        day.suitability,
+                      )}`}
+                    >
+                      {day.suitability}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex items-end gap-2 text-white">
+                    <span className="text-3xl font-semibold leading-none tracking-[-0.05em] tabular-nums">
+                      {day.highTempF}
+                    </span>
+                    <span className="pb-0.5 text-xs font-semibold tracking-[0.12em] text-white/80">
+                      {"\u00B0F"}
+                    </span>
+                    <span className="pb-0.5 text-sm text-slate-400">/</span>
+                    <span className="pb-0.5 text-lg font-semibold tabular-nums text-slate-300">
+                      {day.lowTempF}
+                      {"\u00B0F"}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-2 text-sm text-slate-300">
+                    <p>Wind up to {day.windMph} mph</p>
+                    <p>Gust up to {day.gustMph} mph</p>
+                    <p>Rain chance up to {day.precipProbability}%</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/55 p-4">
