@@ -1,5 +1,11 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
+import {
+  sendProCancellationScheduledEmail,
+  sendProEndedEmail,
+  sendProResumedEmail,
+  sendProStartedEmail,
+} from "@/lib/billing-emails";
 import { getStripe } from "@/lib/stripe";
 import { updateUserBillingMetadata } from "@/lib/subscription";
 
@@ -83,6 +89,13 @@ export async function POST(request: Request) {
             stripeSubscriptionId:
               typeof session.subscription === "string" ? session.subscription : null,
           });
+
+          await sendProStartedEmail({
+            userId,
+            email: session.customer_details?.email || session.customer_email,
+            name: session.customer_details?.name,
+            idempotencyKey: `${event.id}-pro-started`,
+          });
         }
         break;
       }
@@ -125,6 +138,57 @@ export async function POST(request: Request) {
             stripeCustomerId:
               typeof subscription.customer === "string" ? subscription.customer : null,
             stripeSubscriptionId: subscription.id,
+          });
+
+          if (event.type === "customer.subscription.updated") {
+            const previous = event.data.previous_attributes as
+              | Partial<Stripe.Subscription>
+              | undefined;
+
+            if (
+              previous &&
+              typeof previous.cancel_at_period_end === "boolean" &&
+              previous.cancel_at_period_end !== subscription.cancel_at_period_end
+            ) {
+              const customer =
+                typeof subscription.customer === "string"
+                  ? await stripe.customers.retrieve(subscription.customer)
+                  : null;
+              const customerEmail =
+                customer && !customer.deleted ? customer.email : null;
+              const customerName = customer && !customer.deleted ? customer.name : null;
+
+              if (subscription.cancel_at_period_end) {
+                await sendProCancellationScheduledEmail({
+                  userId,
+                  email: customerEmail,
+                  name: customerName,
+                  cancelAt: scheduledCancelAt,
+                  idempotencyKey: `${event.id}-pro-cancel-scheduled`,
+                });
+              } else {
+                await sendProResumedEmail({
+                  userId,
+                  email: customerEmail,
+                  name: customerName,
+                  idempotencyKey: `${event.id}-pro-resumed`,
+                });
+              }
+            }
+          }
+        }
+
+        if (event.type === "customer.subscription.deleted" && userId) {
+          const customer =
+            typeof subscription.customer === "string"
+              ? await stripe.customers.retrieve(subscription.customer)
+              : null;
+
+          await sendProEndedEmail({
+            userId,
+            email: customer && !customer.deleted ? customer.email : null,
+            name: customer && !customer.deleted ? customer.name : null,
+            idempotencyKey: `${event.id}-pro-ended`,
           });
         }
         break;

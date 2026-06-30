@@ -21,6 +21,8 @@ Add these in Vercel for the Production environment:
 - `STRIPE_SECRET_KEY=...`
 - `STRIPE_PRICE_PRO_MONTHLY=price_...`
 - `STRIPE_WEBHOOK_SECRET=...`
+- `RESEND_API_KEY=...` for custom Skies Ready lifecycle emails
+- `RESEND_FROM_EMAIL=...` such as `hello@skiesready.com`
 - `OPENWEATHER_API_KEY=...`
 - `OPENWEATHER_FORECAST_BASE_URL=...` only if you need a non-default endpoint
 - `OPENWEATHER_GEOCODING_BASE_URL=...` only if you need a non-default endpoint
@@ -45,6 +47,11 @@ Add these in Vercel for the Production environment:
   - `customer.subscription.created`
   - `customer.subscription.updated`
   - `customer.subscription.deleted`
+- In Stripe customer email settings, enable launch emails for:
+  - successful payments
+  - failed payments
+  - refunds
+  - upcoming renewals or trial endings if you want Stripe to send those directly
 
 ## 5. Weather Provider
 
@@ -70,3 +77,4 @@ Run these in production after deploy:
 - The app currently supports `Free` and `Pro` only.
 - `Team` pricing has been intentionally removed.
 - If Clerk or Stripe secrets are missing, the app shows setup fallbacks instead of a full live auth flow.
+- If Resend secrets are missing, billing still works, but custom Skies Ready Pro emails will not send.
