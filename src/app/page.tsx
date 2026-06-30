@@ -121,7 +121,7 @@ export default async function HomePage() {
             title="Real user accounts"
           />
           <FeatureCard
-            copy="Live wind, gust, visibility, precipitation, and elevated-wind checks in imperial units."
+            copy="Live wind, gust, humidity, visibility, and precipitation checks in imperial units."
             icon={<Radar className="h-5 w-5" />}
             title="Operational forecast logic"
           />
@@ -205,11 +205,11 @@ function ReadinessCard({
       detail: stripeWebhookConfigured ? "Billing state can sync back into accounts" : "Add webhook secret for subscription sync",
     },
     {
-      label: "Commercial weather API",
+      label: "Weather API",
       ready: commercialWeatherConfigured,
       detail: commercialWeatherConfigured
-        ? "Paid launch weather endpoint is configured"
-        : "Public endpoint works for dev, not for paid commercial launch",
+        ? "OpenWeatherMap forecast data is configured"
+        : "Add an OpenWeatherMap API key for live forecast data",
     },
   ];
 

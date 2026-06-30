@@ -8,7 +8,7 @@ export type ForecastWindow = {
   tempF: number;
   windMph: number;
   gustMph: number;
-  wind80Mph: number;
+  humidity: number;
   precipProbability: number;
   visibilityMiles: number;
   cloudCover: number;
@@ -39,35 +39,66 @@ export type ForecastPayload = {
 
 type GeocodeLocation = {
   name: string;
-  admin1?: string;
+  state?: string;
   country?: string;
-  timezone?: string;
-  latitude: number;
-  longitude: number;
+  lat: number;
+  lon: number;
 };
 
-type GeocodeResponse = {
-  results?: GeocodeLocation[];
-};
+type GeocodeResponse = GeocodeLocation[];
 
 type ForecastResponse = {
-  hourly: {
-    time: string[];
-    temperature_2m: number[];
-    wind_speed_10m: number[];
-    wind_gusts_10m: number[];
-    wind_speed_80m: number[];
-    precipitation_probability: number[];
-    visibility: number[];
-    cloud_cover: number[];
-  };
-  current: {
-    temperature_2m: number;
-    wind_speed_10m: number;
-    wind_gusts_10m: number;
-    weather_code: number;
+  list: Array<{
+    dt: number;
+    main: {
+      temp: number;
+      humidity: number;
+    };
+    weather?: Array<{
+      id: number;
+    }>;
+    clouds?: {
+      all: number;
+    };
+    wind?: {
+      speed: number;
+      gust?: number;
+    };
+    visibility?: number;
+    pop?: number;
+  }>;
+  city: {
+    timezone: number;
   };
 };
+
+type CurrentWeatherResponse = {
+  dt: number;
+  timezone: number;
+  name: string;
+  weather?: Array<{
+    id: number;
+  }>;
+  main: {
+    temp: number;
+    humidity: number;
+  };
+  visibility?: number;
+  wind?: {
+    speed: number;
+    gust?: number;
+  };
+  clouds?: {
+    all: number;
+  };
+  sys?: {
+    country?: string;
+  };
+};
+
+function getWeatherApiKey() {
+  return process.env.OPENWEATHER_API_KEY || process.env.OPEN_METEO_API_KEY;
+}
 
 function buildUrl(base: string, path: string, params: Record<string, string>) {
   const url = new URL(path, base);
@@ -76,19 +107,21 @@ function buildUrl(base: string, path: string, params: Record<string, string>) {
     url.searchParams.set(key, value);
   }
 
-  if (process.env.OPEN_METEO_API_KEY) {
-    url.searchParams.set("apikey", process.env.OPEN_METEO_API_KEY);
+  const apiKey = getWeatherApiKey();
+
+  if (apiKey) {
+    url.searchParams.set("appid", apiKey);
   }
 
   return url.toString();
 }
 
 function getGeocodingBaseUrl() {
-  return process.env.OPEN_METEO_GEOCODING_BASE_URL || "https://geocoding-api.open-meteo.com";
+  return process.env.OPENWEATHER_GEOCODING_BASE_URL || "https://api.openweathermap.org";
 }
 
 function getForecastBaseUrl() {
-  return process.env.OPEN_METEO_FORECAST_BASE_URL || "https://api.open-meteo.com";
+  return process.env.OPENWEATHER_FORECAST_BASE_URL || "https://api.openweathermap.org";
 }
 
 async function fetchJson<T>(url: string) {
@@ -117,14 +150,12 @@ function round(value: number) {
 function assessSuitability(input: {
   windMph: number;
   gustMph: number;
-  wind80Mph: number;
   precipProbability: number;
   visibilityMiles: number;
 }) {
   if (
     input.windMph >= 18 ||
     input.gustMph >= 25 ||
-    input.wind80Mph >= 24 ||
     input.precipProbability >= 50 ||
     input.visibilityMiles <= 2
   ) {
@@ -134,7 +165,6 @@ function assessSuitability(input: {
   if (
     input.windMph >= 11 ||
     input.gustMph >= 18 ||
-    input.wind80Mph >= 16 ||
     input.precipProbability >= 25 ||
     input.visibilityMiles <= 5
   ) {
@@ -144,48 +174,45 @@ function assessSuitability(input: {
   return "good" as const;
 }
 
-function formatHourLabel(timeIso: string, index: number) {
+function formatHourLabel(timestamp: number, index: number, timezoneOffsetSeconds: number) {
   if (index === 0) {
     return "Now";
   }
 
-  const hourValue = Number(timeIso.split("T")[1]?.split(":")[0] || "0");
+  const shiftedDate = new Date((timestamp + timezoneOffsetSeconds) * 1000);
+  const hourValue = shiftedDate.getUTCHours();
   const normalizedHour = hourValue % 12 || 12;
   const meridiem = hourValue >= 12 ? "PM" : "AM";
 
   return `${normalizedHour} ${meridiem}`;
 }
 
-function findStartingIndex(timezone: string, times: string[]) {
-  const currentHourKey = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-  })
-    .format(new Date())
-    .replace(" ", "T")
-    .concat(":00");
+function formatUtcOffset(offsetSeconds: number) {
+  const sign = offsetSeconds >= 0 ? "+" : "-";
+  const absoluteOffset = Math.abs(offsetSeconds);
+  const hours = String(Math.floor(absoluteOffset / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((absoluteOffset % 3600) / 60)).padStart(2, "0");
 
-  const nextIndex = times.findIndex((time) => time >= currentHourKey);
-  return nextIndex === -1 ? 0 : nextIndex;
+  return `UTC${sign}${hours}:${minutes}`;
 }
 
 export async function getForecastForQuery(query: string): Promise<ForecastPayload> {
+  if (!getWeatherApiKey()) {
+    throw new Error("Weather API key is missing");
+  }
+
   const attempts = [query, query.split(",")[0]?.trim()].filter(Boolean) as string[];
   let location: GeocodeLocation | undefined;
 
   for (const attempt of attempts) {
-    const geocodeUrl = buildUrl(getGeocodingBaseUrl(), "/v1/search", {
-      name: attempt,
-      count: "1",
-      language: "en",
-      format: "json",
+    const geocodeUrl = buildUrl(getGeocodingBaseUrl(), "/geo/1.0/direct", {
+      q: attempt,
+      limit: "1",
+      units: "imperial",
     });
 
     const geocode = await fetchJson<GeocodeResponse>(geocodeUrl);
-    location = geocode.results?.[0];
+    location = geocode[0];
 
     if (location) {
       break;
@@ -196,87 +223,105 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
     throw new Error("No matching location found");
   }
 
-  const forecastUrl = buildUrl(getForecastBaseUrl(), "/v1/forecast", {
-    latitude: String(location.latitude),
-    longitude: String(location.longitude),
-    current: "temperature_2m,wind_speed_10m,wind_gusts_10m,weather_code",
-    hourly:
-      "temperature_2m,wind_speed_10m,wind_gusts_10m,wind_speed_80m,precipitation_probability,visibility,cloud_cover",
-    temperature_unit: "fahrenheit",
-    wind_speed_unit: "mph",
-    timezone: location.timezone || "auto",
-    forecast_days: "2",
-  });
+  const [current, forecast] = await Promise.all([
+    fetchJson<CurrentWeatherResponse>(
+      buildUrl(getForecastBaseUrl(), "/data/2.5/weather", {
+        lat: String(location.lat),
+        lon: String(location.lon),
+        units: "imperial",
+      }),
+    ),
+    fetchJson<ForecastResponse>(
+      buildUrl(getForecastBaseUrl(), "/data/2.5/forecast", {
+        lat: String(location.lat),
+        lon: String(location.lon),
+        units: "imperial",
+      }),
+    ),
+  ]);
 
-  const forecast = await fetchJson<ForecastResponse>(forecastUrl);
-  const timezone = location.timezone || "UTC";
-  const startIndex = findStartingIndex(timezone, forecast.hourly.time);
-  const windows = forecast.hourly.time.slice(startIndex, startIndex + 8).map((time, index) => {
-    const sourceIndex = startIndex + index;
-    const windMph = round(forecast.hourly.wind_speed_10m[sourceIndex] || 0);
-    const gustMph = round(forecast.hourly.wind_gusts_10m[sourceIndex] || 0);
-    const wind80Mph = round(forecast.hourly.wind_speed_80m[sourceIndex] || 0);
-    const precipProbability = round(
-      forecast.hourly.precipitation_probability[sourceIndex] || 0,
-    );
-    const visibilityMiles = round(toMiles(forecast.hourly.visibility[sourceIndex] || 0));
-    const cloudCover = round(forecast.hourly.cloud_cover[sourceIndex] || 0);
-    const suitability = assessSuitability({
-      windMph,
-      gustMph,
-      wind80Mph,
-      precipProbability,
-      visibilityMiles,
-    });
+  const timezoneOffset = current.timezone ?? forecast.city.timezone ?? 0;
+  const timezone = formatUtcOffset(timezoneOffset);
+  const startIndex = forecast.list.findIndex((entry) => entry.dt >= current.dt);
+  const upcomingEntries =
+    startIndex === -1 ? forecast.list.slice(0, 7) : forecast.list.slice(startIndex, startIndex + 7);
 
-    return {
-      timeIso: time,
-      timeLabel: formatHourLabel(time, index),
-      tempF: round(forecast.hourly.temperature_2m[sourceIndex] || 0),
-      windMph,
-      gustMph,
-      wind80Mph,
-      precipProbability,
-      visibilityMiles,
-      cloudCover,
-      suitability,
-    };
-  });
-
+  const currentWindMph = round(current.wind?.speed || 0);
+  const currentGustMph = round(current.wind?.gust || current.wind?.speed || 0);
+  const currentVisibilityMiles = round(toMiles(current.visibility || 0));
   const currentSuitability = assessSuitability({
-    windMph: round(forecast.current.wind_speed_10m || 0),
-    gustMph: round(forecast.current.wind_gusts_10m || 0),
-    wind80Mph: windows[0]?.wind80Mph || 0,
-    precipProbability: windows[0]?.precipProbability || 0,
-    visibilityMiles: windows[0]?.visibilityMiles || 0,
+    windMph: currentWindMph,
+    gustMph: currentGustMph,
+    precipProbability: 0,
+    visibilityMiles: currentVisibilityMiles,
   });
 
-  const locationLabel = [location.name, location.admin1, location.country]
+  const windows = [
+    {
+      timeIso: new Date(current.dt * 1000).toISOString(),
+      timeLabel: "Now",
+      tempF: round(current.main.temp || 0),
+      windMph: currentWindMph,
+      gustMph: currentGustMph,
+      humidity: round(current.main.humidity || 0),
+      precipProbability: 0,
+      visibilityMiles: currentVisibilityMiles,
+      cloudCover: round(current.clouds?.all || 0),
+      suitability: currentSuitability,
+    },
+    ...upcomingEntries.map((entry, index) => {
+      const windMph = round(entry.wind?.speed || 0);
+      const gustMph = round(entry.wind?.gust || entry.wind?.speed || 0);
+      const precipProbability = round((entry.pop || 0) * 100);
+      const visibilityMiles = round(toMiles(entry.visibility || 0));
+      const suitability = assessSuitability({
+        windMph,
+        gustMph,
+        precipProbability,
+        visibilityMiles,
+      });
+
+      return {
+        timeIso: new Date(entry.dt * 1000).toISOString(),
+        timeLabel: formatHourLabel(entry.dt, index + 1, timezoneOffset),
+        tempF: round(entry.main.temp || 0),
+        windMph,
+        gustMph,
+        humidity: round(entry.main.humidity || 0),
+        precipProbability,
+        visibilityMiles,
+        cloudCover: round(entry.clouds?.all || 0),
+        suitability,
+      };
+    }),
+  ];
+
+  const locationLabel = [location.name, location.state, current.sys?.country || location.country]
     .filter(Boolean)
     .join(", ");
 
   return {
     location: {
       name: location.name,
-      region: location.admin1 || "",
-      country: location.country || "",
+      region: location.state || "",
+      country: current.sys?.country || location.country || "",
       timezone,
-      latitude: location.latitude,
-      longitude: location.longitude,
+      latitude: location.lat,
+      longitude: location.lon,
     },
     current: {
-      tempF: round(forecast.current.temperature_2m || 0),
-      windMph: round(forecast.current.wind_speed_10m || 0),
-      gustMph: round(forecast.current.wind_gusts_10m || 0),
-      weatherCode: forecast.current.weather_code || 0,
+      tempF: round(current.main.temp || 0),
+      windMph: currentWindMph,
+      gustMph: currentGustMph,
+      weatherCode: current.weather?.[0]?.id || 0,
       suitability: currentSuitability,
     },
     windows,
-    summary: `Live forecast for ${locationLabel} with imperial wind, gust, visibility, and precipitation checks.`,
+    summary: `Live forecast for ${locationLabel} with current conditions and upcoming 3-hour forecast windows in imperial units.`,
     providerNote:
-      process.env.OPEN_METEO_API_KEY
-        ? "Commercial weather endpoint configured."
-        : "Using the public Open-Meteo endpoint. Switch to a commercial key before paid launch.",
-    updatedAt: new Date().toISOString(),
+      getWeatherApiKey()
+        ? "Live data from OpenWeatherMap. Forecast cards after Now use the provider's upcoming 3-hour windows on the current plan."
+        : "OpenWeatherMap is not configured yet.",
+    updatedAt: new Date(current.dt * 1000).toISOString(),
   };
 }

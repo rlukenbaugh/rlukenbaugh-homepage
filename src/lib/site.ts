@@ -4,7 +4,7 @@ export const siteConfig = {
   appName: "Skies Ready Pro",
   supportEmail: "contact@rlukenbaugh.org",
   defaultLocationQuery: "Enid, Oklahoma 73701",
-  providerName: "Open-Meteo",
+  providerName: "OpenWeatherMap",
 };
 
 export function getAppUrl() {
@@ -20,7 +20,9 @@ export function getLaunchReadiness() {
       process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_PRO_MONTHLY,
     ),
     stripeWebhookConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
-    commercialWeatherConfigured: Boolean(process.env.OPEN_METEO_API_KEY),
+    commercialWeatherConfigured: Boolean(
+      process.env.OPENWEATHER_API_KEY || process.env.OPEN_METEO_API_KEY,
+    ),
   };
 }
 

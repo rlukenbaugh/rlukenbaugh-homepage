@@ -21,9 +21,9 @@ Add these in Vercel for the Production environment:
 - `STRIPE_SECRET_KEY=...`
 - `STRIPE_PRICE_PRO_MONTHLY=price_...`
 - `STRIPE_WEBHOOK_SECRET=...`
-- `OPEN_METEO_API_KEY=...` if using a commercial Open-Meteo endpoint
-- `OPEN_METEO_FORECAST_BASE_URL=...` if your paid endpoint differs
-- `OPEN_METEO_GEOCODING_BASE_URL=...` if your paid endpoint differs
+- `OPENWEATHER_API_KEY=...`
+- `OPENWEATHER_FORECAST_BASE_URL=...` only if you need a non-default endpoint
+- `OPENWEATHER_GEOCODING_BASE_URL=...` only if you need a non-default endpoint
 
 ## 3. Clerk Setup
 
@@ -48,9 +48,8 @@ Add these in Vercel for the Production environment:
 
 ## 5. Weather Provider
 
-- Development currently works with the public Open-Meteo endpoint.
-- Before charging customers, switch to a licensed commercial weather/data plan.
-- Re-test forecast lookup after adding the production weather credentials.
+- Forecast search uses OpenWeatherMap geocoding, current weather, and upcoming forecast windows.
+- Re-test forecast lookup after adding or changing the production weather credentials.
 
 ## 6. Production Smoke Test
 
