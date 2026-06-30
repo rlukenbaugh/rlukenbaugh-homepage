@@ -1,6 +1,8 @@
 "use client";
 
 import { startTransition, useState } from "react";
+import Link from "next/link";
+import { buildForecastSharePath, buildForecastShareUrl } from "@/lib/forecast-share";
 import { FLIGHT_RISK_THRESHOLDS, type ForecastPayload, type ForecastWindow } from "@/lib/forecast";
 import type { LocationEntry } from "@/lib/user-locations";
 import { WeatherIcon } from "@/components/weather-icon";
@@ -47,15 +49,22 @@ export function ForecastExplorer({
   const [libraryMessage, setLibraryMessage] = useState("");
   const [savedLocations, setSavedLocations] = useState(initialSavedLocations);
   const [locationHistory, setLocationHistory] = useState(initialLocationHistory);
+  const [shareMessage, setShareMessage] = useState("");
 
   const selectedWindow = forecast.windows[selectedIndex] || forecast.windows[0];
   const locationLabel = `${forecast.location.name}${forecast.location.region ? `, ${forecast.location.region}` : ""}`;
   const reasonSummary = getSuitabilitySummary(selectedWindow);
+  const shareLocationLabel = [forecast.location.name, forecast.location.region]
+    .filter(Boolean)
+    .join(" ");
+  const sharePath = buildForecastSharePath(shareLocationLabel || query);
+  const shareUrl = buildForecastShareUrl(shareLocationLabel || query);
 
   function searchForecast() {
     setPending(true);
     setError("");
     setLibraryMessage("");
+    setShareMessage("");
 
     startTransition(() => {
       void fetch(`/api/forecast?query=${encodeURIComponent(query)}`)
@@ -133,6 +142,7 @@ export function ForecastExplorer({
     setPending(true);
     setError("");
     setLibraryMessage("");
+    setShareMessage("");
 
     startTransition(() => {
       void fetch(`/api/forecast?query=${encodeURIComponent(nextQuery)}`)
@@ -155,6 +165,23 @@ export function ForecastExplorer({
           setPending(false);
         });
     });
+  }
+
+  async function copyForecast() {
+    const riskLine = `${capitalizeSuitability(forecast.current.suitability)} due to ${forecast.current.windMph} mph wind and ${forecast.current.gustMph} mph gusts.`;
+    const summary = [
+      `Skies Ready drone forecast for ${locationLabel}:`,
+      riskLine,
+      "Check FAA airspace and TFRs before launch.",
+      shareUrl,
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setShareMessage("Forecast summary copied.");
+    } catch {
+      setShareMessage("Copy failed on this browser.");
+    }
   }
 
   return (
@@ -194,6 +221,23 @@ export function ForecastExplorer({
           >
             {pending ? "Checking..." : "Check forecast"}
           </button>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            className="rounded-full border border-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/[0.04]"
+            onClick={() => void copyForecast()}
+            type="button"
+          >
+            Copy forecast
+          </button>
+          <Link
+            className="rounded-full border border-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/[0.04]"
+            href={sharePath}
+          >
+            Open shareable page
+          </Link>
+          {shareMessage ? <p className="self-center text-sm text-slate-300">{shareMessage}</p> : null}
         </div>
 
         {forecast.alerts.length ? (
@@ -613,6 +657,10 @@ function getSuitabilitySummary(window: ForecastWindow) {
         : "One or more launch factors are in the caution range.",
     detail: reasons.slice(0, 2).join(" "),
   };
+}
+
+function capitalizeSuitability(value: ForecastWindow["suitability"]) {
+  return `${value[0]?.toUpperCase()}${value.slice(1)}`;
 }
 
 function LocationList({

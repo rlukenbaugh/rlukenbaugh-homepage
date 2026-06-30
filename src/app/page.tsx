@@ -6,6 +6,7 @@ import { PricingSection } from "@/components/pricing-section";
 import { SignOutButtonPill } from "@/components/sign-out-button";
 import { getOptionalAuth } from "@/lib/auth";
 import { getForecastForQuery } from "@/lib/forecast";
+import { seoLandingPages } from "@/lib/seo-pages";
 import { getViewerSubscriptionState } from "@/lib/subscription";
 import { siteConfig } from "@/lib/site";
 
@@ -202,6 +203,35 @@ export default async function HomePage({
           />
         </section>
 
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 pb-8 backdrop-blur">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">
+                Popular drone weather guides
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+                Start with the exact flight question you want answered
+              </h2>
+            </div>
+            <p className="max-w-2xl text-sm leading-7 text-slate-300">
+              These pages target the real phrases drone pilots search for, then lead directly into
+              the live Skies Ready forecast workflow.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {seoLandingPages.map((page) => (
+              <Link
+                className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 transition hover:border-cyan-300/30 hover:bg-white/[0.05]"
+                href={`/${page.slug}`}
+                key={page.slug}
+              >
+                <h3 className="text-lg font-semibold text-white">{page.title}</h3>
+                <p className="mt-2 text-sm leading-7 text-slate-300">{page.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         <section className="grid gap-4 pb-14 lg:grid-cols-[1.15fr_0.85fr]">
           <article className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">
@@ -223,6 +253,14 @@ export default async function HomePage({
               <SearchPhraseCard
                 copy="Compare current launch risk with upcoming windows and five-day outlook cards."
                 title="Drone launch weather"
+              />
+              <SearchPhraseCard
+                copy="Learn what Skies Ready checks, what B4UFLY covers, and where LAANC and TFR checks still fit."
+                title="Drone weather vs airspace"
+              />
+              <SearchPhraseCard
+                copy="Read short answers to common pilot questions about wind, gusts, visibility, rain, and launch risk."
+                title="Drone weather FAQ"
               />
             </div>
           </article>

@@ -16,6 +16,9 @@ export function SiteFooter() {
             </p>
           </div>
           <nav className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-slate-300 md:max-w-sm md:justify-end">
+            <Link className="whitespace-nowrap hover:text-white" href="/faq">
+              FAQ
+            </Link>
             <Link className="whitespace-nowrap hover:text-white" href="/support">
               Support
             </Link>

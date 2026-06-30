@@ -39,12 +39,21 @@ export const metadata: Metadata = {
     title: "Skies Ready | Drone Flight Forecast",
     description:
       "Check drone flight weather, wind, gusts, visibility, cloud cover, and rain risk before you launch.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Skies Ready drone weather preview",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Skies Ready | Drone Flight Forecast",
     description:
       "Check drone flight weather, wind, gusts, visibility, cloud cover, and rain risk before you launch.",
+    images: ["/twitter-image"],
   },
 };
 
