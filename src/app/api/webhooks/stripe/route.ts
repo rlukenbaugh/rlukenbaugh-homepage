@@ -6,6 +6,7 @@ import {
   sendProResumedEmail,
   sendProStartedEmail,
 } from "@/lib/billing-emails";
+import { createRouteLogger } from "@/lib/monitoring";
 import { getStripe } from "@/lib/stripe";
 import { updateUserBillingMetadata } from "@/lib/subscription";
 
@@ -43,9 +44,12 @@ async function resolveClerkUserId(
 }
 
 export async function POST(request: Request) {
+  const logger = createRouteLogger("/api/webhooks/stripe", request);
+  logger.start();
   const signingSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!signingSecret) {
+    logger.success({ signingSecretConfigured: false });
     return NextResponse.json(
       { error: "Missing STRIPE_WEBHOOK_SECRET" },
       { status: 503 },
@@ -57,6 +61,7 @@ export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
 
   if (!signature) {
+    logger.success({ signaturePresent: false });
     return NextResponse.json({ error: "Missing stripe-signature" }, { status: 400 });
   }
 
@@ -65,6 +70,7 @@ export async function POST(request: Request) {
   try {
     event = stripe.webhooks.constructEvent(payload, signature, signingSecret);
   } catch (cause) {
+    await logger.failure(cause, { stage: "signature_verification" });
     return NextResponse.json(
       {
         error: cause instanceof Error ? cause.message : "Invalid webhook signature",
@@ -197,8 +203,10 @@ export async function POST(request: Request) {
         break;
     }
 
+    logger.success({ eventType: event.type, eventId: event.id });
     return NextResponse.json({ received: true });
   } catch (cause) {
+    await logger.failure(cause, { eventType: event.type, eventId: event.id });
     return NextResponse.json(
       {
         error: cause instanceof Error ? cause.message : "Webhook handler failed",

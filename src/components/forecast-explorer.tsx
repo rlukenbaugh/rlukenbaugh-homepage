@@ -2,6 +2,8 @@
 
 import { startTransition, useState } from "react";
 import type { ForecastPayload } from "@/lib/forecast";
+import type { LocationEntry } from "@/lib/user-locations";
+import { WeatherIcon } from "@/components/weather-icon";
 
 function statusClasses(status: ForecastPayload["current"]["suitability"]) {
   if (status === "good") {
@@ -15,24 +17,44 @@ function statusClasses(status: ForecastPayload["current"]["suitability"]) {
   return "bg-rose-400/15 text-rose-100 ring-1 ring-rose-400/30";
 }
 
+function alertClasses(severity: "info" | "warning") {
+  return severity === "warning"
+    ? "border-amber-300/25 bg-amber-400/10 text-amber-50"
+    : "border-cyan-300/20 bg-cyan-400/10 text-cyan-50";
+}
+
 export function ForecastExplorer({
   initialForecast,
   initialQuery,
+  canManageLocations = false,
+  initialSavedLocations = [],
+  initialLocationHistory = [],
+  showProLocationUpsell = false,
 }: {
   initialForecast: ForecastPayload;
   initialQuery: string;
+  canManageLocations?: boolean;
+  initialSavedLocations?: LocationEntry[];
+  initialLocationHistory?: LocationEntry[];
+  showProLocationUpsell?: boolean;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [forecast, setForecast] = useState(initialForecast);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [libraryBusy, setLibraryBusy] = useState(false);
+  const [libraryMessage, setLibraryMessage] = useState("");
+  const [savedLocations, setSavedLocations] = useState(initialSavedLocations);
+  const [locationHistory, setLocationHistory] = useState(initialLocationHistory);
 
   const selectedWindow = forecast.windows[selectedIndex] || forecast.windows[0];
+  const locationLabel = `${forecast.location.name}${forecast.location.region ? `, ${forecast.location.region}` : ""}`;
 
   function searchForecast() {
     setPending(true);
     setError("");
+    setLibraryMessage("");
 
     startTransition(() => {
       void fetch(`/api/forecast?query=${encodeURIComponent(query)}`)
@@ -46,6 +68,86 @@ export function ForecastExplorer({
           setForecast(payload);
           setSelectedIndex(0);
           setPending(false);
+          if (canManageLocations) {
+            void syncLibrary("record", query, formatSearchLabel(payload));
+          }
+        })
+        .catch((cause: unknown) => {
+          setError(cause instanceof Error ? cause.message : "Unable to load live forecast");
+          setPending(false);
+        });
+    });
+  }
+
+  function formatSearchLabel(payload: ForecastPayload) {
+    return `${payload.location.name}${payload.location.region ? `, ${payload.location.region}` : ""}`;
+  }
+
+  function syncLibrary(action: "record" | "save" | "remove", nextQuery: string, label?: string) {
+    setLibraryBusy(true);
+
+    return fetch("/api/user-locations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action,
+        query: nextQuery,
+        label,
+      }),
+    })
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          error?: string;
+          saved?: LocationEntry[];
+          history?: LocationEntry[];
+        };
+
+        if (!response.ok) {
+          throw new Error(payload.error || "Unable to update saved locations");
+        }
+
+        setSavedLocations(payload.saved || []);
+        setLocationHistory(payload.history || []);
+
+        if (action === "save") {
+          setLibraryMessage("Location saved to Pro launch locations.");
+        } else if (action === "remove") {
+          setLibraryMessage("Saved location removed.");
+        }
+      })
+      .catch((cause: unknown) => {
+        setLibraryMessage(
+          cause instanceof Error ? cause.message : "Unable to update saved locations",
+        );
+      })
+      .finally(() => {
+        setLibraryBusy(false);
+      });
+  }
+
+  function runSavedSearch(nextQuery: string) {
+    setQuery(nextQuery);
+    setPending(true);
+    setError("");
+    setLibraryMessage("");
+
+    startTransition(() => {
+      void fetch(`/api/forecast?query=${encodeURIComponent(nextQuery)}`)
+        .then(async (response) => {
+          const payload = (await response.json()) as ForecastPayload & { error?: string };
+
+          if (!response.ok) {
+            throw new Error(payload.error || "Unable to load live forecast");
+          }
+
+          setForecast(payload);
+          setSelectedIndex(0);
+          setPending(false);
+          if (canManageLocations) {
+            void syncLibrary("record", nextQuery, formatSearchLabel(payload));
+          }
         })
         .catch((cause: unknown) => {
           setError(cause instanceof Error ? cause.message : "Unable to load live forecast");
@@ -63,8 +165,7 @@ export function ForecastExplorer({
               Live launch forecast
             </p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
-              {forecast.location.name}
-              {forecast.location.region ? `, ${forecast.location.region}` : ""}
+              {locationLabel}
             </h2>
             <p className="mt-1 text-sm text-slate-300">{forecast.summary}</p>
           </div>
@@ -93,11 +194,32 @@ export function ForecastExplorer({
             {pending ? "Refreshing..." : "Update forecast"}
           </button>
         </div>
+
+        {forecast.alerts.length ? (
+          <div className="grid gap-3 xl:grid-cols-3">
+            {forecast.alerts.map((alert) => (
+              <article
+                className={`rounded-2xl border px-4 py-3 text-sm leading-6 ${alertClasses(alert.severity)}`}
+                key={`${alert.title}-${alert.detail}`}
+              >
+                <p className="font-semibold uppercase tracking-[0.14em]">{alert.title}</p>
+                <p className="mt-1 text-white/80">{alert.detail}</p>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/35 p-4">
-          <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Condition</p>
+              <div className="mt-2 flex items-center gap-2 text-white">
+                <WeatherIcon className="h-6 w-6 text-cyan-200" iconKey={forecast.current.iconKey} />
+                <span className="text-lg font-semibold">{forecast.current.conditionLabel}</span>
+              </div>
+            </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Temp</p>
               <div className="mt-2 flex items-start gap-1 text-white">
@@ -116,6 +238,18 @@ export function ForecastExplorer({
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Gust</p>
               <p className="mt-2 text-3xl font-semibold text-white">{forecast.current.gustMph} mph</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Sunrise</p>
+              <p className="mt-2 text-base font-semibold text-white">
+                {formatClock(forecast.current.sunriseAt)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Sunset</p>
+              <p className="mt-2 text-base font-semibold text-white">
+                {formatClock(forecast.current.sunsetAt)}
+              </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Updated</p>
@@ -182,10 +316,14 @@ export function ForecastExplorer({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
-                        {day.dayLabel}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <WeatherIcon className="h-4 w-4 text-cyan-200" iconKey={day.iconKey} />
+                        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
+                          {day.dayLabel}
+                        </p>
+                      </div>
                       <p className="mt-1 text-xs text-slate-400">{day.dateLabel}</p>
+                      <p className="mt-1 text-xs text-slate-400">{day.conditionLabel}</p>
                     </div>
                     <span
                       className={`rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] ${statusClasses(
@@ -234,6 +372,57 @@ export function ForecastExplorer({
             <Metric label="Precip chance" value={`${selectedWindow.precipProbability}%`} />
             <Metric label="Cloud cover" value={`${selectedWindow.cloudCover}%`} />
           </div>
+
+          {canManageLocations ? (
+            <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/80">
+                    Pro launch locations
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    Save favorite launch areas and revisit recent searches quickly.
+                  </p>
+                </div>
+                <button
+                  className="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
+                  disabled={libraryBusy}
+                  onClick={() => void syncLibrary("save", query, locationLabel)}
+                  type="button"
+                >
+                  {libraryBusy ? "Updating..." : "Save this location"}
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                <LocationList
+                  emptyCopy="No saved locations yet."
+                  items={savedLocations}
+                  onPick={runSavedSearch}
+                  onRemove={(itemQuery) => void syncLibrary("remove", itemQuery)}
+                  title="Saved locations"
+                />
+                <LocationList
+                  emptyCopy="Search activity will appear here."
+                  items={locationHistory}
+                  onPick={runSavedSearch}
+                  title="Recent history"
+                />
+              </div>
+              {libraryMessage ? <p className="mt-3 text-sm text-slate-300">{libraryMessage}</p> : null}
+            </div>
+          ) : showProLocationUpsell ? (
+            <div className="mt-5 rounded-[1.5rem] border border-cyan-300/15 bg-cyan-400/8 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/80">
+                Pro feature
+              </p>
+              <p className="mt-2 text-sm leading-7 text-slate-300">
+                Saved launch locations and recent forecast history unlock with Pro so repeat flight
+                planning is faster.
+              </p>
+            </div>
+          ) : null}
+
           <p className="mt-4 text-sm text-slate-300">{forecast.providerNote}</p>
           {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
         </div>
@@ -242,11 +431,74 @@ export function ForecastExplorer({
   );
 }
 
+function formatClock(value: string | null) {
+  if (!value) {
+    return "Unavailable";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
       <span className="text-sm text-slate-300">{label}</span>
       <span className="font-semibold text-white">{value}</span>
+    </div>
+  );
+}
+
+function LocationList({
+  title,
+  items,
+  emptyCopy,
+  onPick,
+  onRemove,
+}: {
+  title: string;
+  items: LocationEntry[];
+  emptyCopy: string;
+  onPick: (query: string) => void;
+  onRemove?: (query: string) => void;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{title}</p>
+      <div className="mt-3 space-y-2">
+        {items.length ? (
+          items.map((item) => (
+            <div
+              className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-3"
+              key={`${title}-${item.query}`}
+            >
+              <button
+                className="min-w-0 flex-1 text-left"
+                onClick={() => onPick(item.query)}
+                type="button"
+              >
+                <p className="truncate font-semibold text-white">{item.label}</p>
+                <p className="mt-1 truncate text-xs text-slate-400">{item.query}</p>
+              </button>
+              {onRemove ? (
+                <button
+                  className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300 hover:bg-white/[0.04]"
+                  onClick={() => onRemove(item.query)}
+                  type="button"
+                >
+                  Remove
+                </button>
+              ) : null}
+            </div>
+          ))
+        ) : (
+          <p className="rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-3 text-sm text-slate-400">
+            {emptyCopy}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

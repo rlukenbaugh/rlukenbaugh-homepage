@@ -24,7 +24,8 @@ export const PRO_PLAN = {
   envKey: "STRIPE_PRICE_PRO_MONTHLY",
   features: [
     "Saved launch locations",
-    "Longer forecast windows",
+    "Recent forecast history",
+    "5-day outlook and launch alerts",
     "Billing portal access",
     "Priority access to premium data feeds",
   ],

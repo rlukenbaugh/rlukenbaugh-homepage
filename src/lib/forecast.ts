@@ -1,6 +1,22 @@
 import { siteConfig } from "@/lib/site";
 
 export type Suitability = "good" | "caution" | "risky";
+export type WeatherIconKey =
+  | "sun"
+  | "cloud"
+  | "cloud-sun"
+  | "cloud-rain"
+  | "cloud-drizzle"
+  | "cloud-lightning"
+  | "snow"
+  | "fog"
+  | "wind";
+
+export type ForecastAlert = {
+  severity: "info" | "warning";
+  title: string;
+  detail: string;
+};
 
 export type ForecastWindow = {
   timeLabel: string;
@@ -21,6 +37,8 @@ export type DailyForecast = {
   dateLabel: string;
   highTempF: number;
   lowTempF: number;
+  conditionLabel: string;
+  iconKey: WeatherIconKey;
   windMph: number;
   gustMph: number;
   precipProbability: number;
@@ -40,11 +58,19 @@ export type ForecastPayload = {
     tempF: number;
     windMph: number;
     gustMph: number;
+    humidity: number;
+    visibilityMiles: number;
+    cloudCover: number;
     weatherCode: number;
+    conditionLabel: string;
+    iconKey: WeatherIconKey;
     suitability: Suitability;
+    sunriseAt: string | null;
+    sunsetAt: string | null;
   };
   windows: ForecastWindow[];
   daily: DailyForecast[];
+  alerts: ForecastAlert[];
   summary: string;
   providerNote: string;
   updatedAt: string;
@@ -69,6 +95,8 @@ type ForecastResponse = {
     };
     weather?: Array<{
       id: number;
+      main?: string;
+      description?: string;
     }>;
     clouds?: {
       all: number;
@@ -91,6 +119,8 @@ type CurrentWeatherResponse = {
   name: string;
   weather?: Array<{
     id: number;
+    main?: string;
+    description?: string;
   }>;
   main: {
     temp: number;
@@ -106,6 +136,8 @@ type CurrentWeatherResponse = {
   };
   sys?: {
     country?: string;
+    sunrise?: number;
+    sunset?: number;
   };
 };
 
@@ -158,6 +190,42 @@ function toMiles(meters: number) {
 
 function round(value: number) {
   return Math.round(value);
+}
+
+function describeWeather(code: number): { label: string; iconKey: WeatherIconKey } {
+  if (code >= 200 && code < 300) {
+    return { label: "Thunderstorms", iconKey: "cloud-lightning" };
+  }
+
+  if (code >= 300 && code < 400) {
+    return { label: "Drizzle", iconKey: "cloud-drizzle" };
+  }
+
+  if (code >= 500 && code < 600) {
+    return { label: "Rain", iconKey: "cloud-rain" };
+  }
+
+  if (code >= 600 && code < 700) {
+    return { label: "Snow", iconKey: "snow" };
+  }
+
+  if (code >= 700 && code < 800) {
+    return code === 771 ? { label: "Windy", iconKey: "wind" } : { label: "Low visibility", iconKey: "fog" };
+  }
+
+  if (code === 800) {
+    return { label: "Clear", iconKey: "sun" };
+  }
+
+  if (code === 801 || code === 802) {
+    return { label: "Partly cloudy", iconKey: "cloud-sun" };
+  }
+
+  if (code >= 803 && code <= 804) {
+    return { label: "Cloudy", iconKey: "cloud" };
+  }
+
+  return { label: "Conditions mixed", iconKey: "cloud-sun" };
 }
 
 function assessSuitability(input: {
@@ -237,6 +305,59 @@ function formatShortDateLabel(timestamp: number, timezoneOffsetSeconds: number) 
   }).format(shiftToLocalDate(timestamp, timezoneOffsetSeconds));
 }
 
+function deriveAlerts(input: {
+  currentWindMph: number;
+  currentGustMph: number;
+  currentVisibilityMiles: number;
+  currentTempF: number;
+  windows: ForecastWindow[];
+}) {
+  const alerts: ForecastAlert[] = [];
+
+  if (input.currentGustMph >= 25) {
+    alerts.push({
+      severity: "warning",
+      title: "Strong gusts in the launch area",
+      detail: `Current gusts are reaching ${input.currentGustMph} mph, which can make takeoff and control less predictable.`,
+    });
+  }
+
+  if (input.currentVisibilityMiles <= 3) {
+    alerts.push({
+      severity: "warning",
+      title: "Reduced visibility",
+      detail: `Visibility is around ${input.currentVisibilityMiles} miles right now. Double-check line-of-sight conditions before launch.`,
+    });
+  }
+
+  const rainWindow = input.windows.find((window) => window.precipProbability >= 40);
+  if (rainWindow) {
+    alerts.push({
+      severity: rainWindow.precipProbability >= 60 ? "warning" : "info",
+      title: "Rain risk in the next forecast windows",
+      detail: `${rainWindow.precipProbability}% precipitation potential is showing around ${rainWindow.timeLabel}.`,
+    });
+  }
+
+  if (input.currentWindMph >= 18 && !alerts.some((alert) => alert.title.includes("gusts"))) {
+    alerts.push({
+      severity: "warning",
+      title: "Sustained wind is elevated",
+      detail: `Steady wind is near ${input.currentWindMph} mph. Consider a more sheltered launch time or location.`,
+    });
+  }
+
+  if (input.currentTempF >= 100) {
+    alerts.push({
+      severity: "info",
+      title: "High-heat operating conditions",
+      detail: `Temperatures are around ${input.currentTempF}\u00B0F. Watch battery temperature and pilot heat exposure.`,
+    });
+  }
+
+  return alerts.slice(0, 3);
+}
+
 export async function getForecastForQuery(query: string): Promise<ForecastPayload> {
   if (!getWeatherApiKey()) {
     throw new Error("Weather API key is missing");
@@ -290,6 +411,10 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
   const currentWindMph = round(current.wind?.speed || 0);
   const currentGustMph = round(current.wind?.gust || current.wind?.speed || 0);
   const currentVisibilityMiles = round(toMiles(current.visibility || 0));
+  const currentHumidity = round(current.main.humidity || 0);
+  const currentCloudCover = round(current.clouds?.all || 0);
+  const currentWeatherCode = current.weather?.[0]?.id || 0;
+  const currentWeather = describeWeather(currentWeatherCode);
   const currentSuitability = assessSuitability({
     windMph: currentWindMph,
     gustMph: currentGustMph,
@@ -346,6 +471,8 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
     dateLabel: formatShortDateLabel(current.dt, timezoneOffset),
     highTempF: round(current.main.temp || 0),
     lowTempF: round(current.main.temp || 0),
+    conditionLabel: currentWeather.label,
+    iconKey: currentWeather.iconKey,
     windMph: currentWindMph,
     gustMph: currentGustMph,
     precipProbability: 0,
@@ -358,6 +485,7 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
     const gustMph = round(entry.wind?.gust || entry.wind?.speed || 0);
     const precipProbability = round((entry.pop || 0) * 100);
     const visibilityMiles = round(toMiles(entry.visibility || 0));
+    const weather = describeWeather(entry.weather?.[0]?.id || 0);
     const suitability = assessSuitability({
       windMph,
       gustMph,
@@ -374,6 +502,8 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
         dateLabel: formatShortDateLabel(entry.dt, timezoneOffset),
         highTempF: round(entry.main.temp || 0),
         lowTempF: round(entry.main.temp || 0),
+        conditionLabel: weather.label,
+        iconKey: weather.iconKey,
         windMph,
         gustMph,
         precipProbability,
@@ -397,6 +527,13 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
   }
 
   const daily = Array.from(dailyMap.values()).slice(0, 5);
+  const alerts = deriveAlerts({
+    currentWindMph,
+    currentGustMph,
+    currentVisibilityMiles,
+    currentTempF: round(current.main.temp || 0),
+    windows,
+  });
 
   const locationLabel = [location.name, location.state, current.sys?.country || location.country]
     .filter(Boolean)
@@ -415,15 +552,23 @@ export async function getForecastForQuery(query: string): Promise<ForecastPayloa
       tempF: round(current.main.temp || 0),
       windMph: currentWindMph,
       gustMph: currentGustMph,
-      weatherCode: current.weather?.[0]?.id || 0,
+      humidity: currentHumidity,
+      visibilityMiles: currentVisibilityMiles,
+      cloudCover: currentCloudCover,
+      weatherCode: currentWeatherCode,
+      conditionLabel: currentWeather.label,
+      iconKey: currentWeather.iconKey,
       suitability: currentSuitability,
+      sunriseAt: current.sys?.sunrise ? new Date(current.sys.sunrise * 1000).toISOString() : null,
+      sunsetAt: current.sys?.sunset ? new Date(current.sys.sunset * 1000).toISOString() : null,
     },
     windows,
     daily,
+    alerts,
     summary: `Live forecast for ${locationLabel} with current conditions and upcoming 3-hour forecast windows in imperial units.`,
     providerNote:
       getWeatherApiKey()
-        ? "Live data from OpenWeatherMap. Short-term cards use upcoming 3-hour windows, and daily cards summarize the next five forecast days on the current plan."
+        ? "Live data from OpenWeatherMap. Short-term cards use upcoming 3-hour windows, daily cards summarize the next five forecast days, and launch alerts are derived from the live conditions on the current plan."
         : "OpenWeatherMap is not configured yet.",
     updatedAt: new Date(current.dt * 1000).toISOString(),
   };

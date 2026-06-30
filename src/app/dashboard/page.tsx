@@ -8,6 +8,7 @@ import { getOptionalAuth, getOptionalCurrentUser } from "@/lib/auth";
 import { getForecastForQuery } from "@/lib/forecast";
 import { getViewerSubscriptionState } from "@/lib/subscription";
 import { isClerkConfigured, siteConfig } from "@/lib/site";
+import { getViewerLocationLibrary } from "@/lib/user-locations";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -27,10 +28,11 @@ export default async function DashboardPage() {
     redirect("/sign-in?redirect_url=/dashboard");
   }
 
-  const [user, subscription, forecast] = await Promise.all([
+  const [user, subscription, forecast, locationLibrary] = await Promise.all([
     getOptionalCurrentUser(),
     getViewerSubscriptionState(),
     getForecastForQuery(siteConfig.defaultLocationQuery),
+    getViewerLocationLibrary(),
   ]);
 
   return (
@@ -94,8 +96,12 @@ export default async function DashboardPage() {
         </section>
 
         <ForecastExplorer
+          canManageLocations={Boolean(subscription?.isPro)}
           initialForecast={forecast}
+          initialLocationHistory={locationLibrary?.history || []}
           initialQuery={siteConfig.defaultLocationQuery}
+          initialSavedLocations={locationLibrary?.saved || []}
+          showProLocationUpsell={Boolean(userId && !subscription?.isPro)}
         />
       </div>
     </main>

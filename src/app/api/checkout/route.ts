@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
+import { createRouteLogger } from "@/lib/monitoring";
 import { PRO_PLAN } from "@/lib/plans";
 import { getAppUrl, isClerkConfigured } from "@/lib/site";
 import { getStripe, getProPriceId } from "@/lib/stripe";
 import { getViewerSubscriptionState, updateUserBillingMetadata } from "@/lib/subscription";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const logger = createRouteLogger("/api/checkout", request);
+  logger.start();
+
   if (!isClerkConfigured()) {
+    logger.success({ configured: false });
     return NextResponse.json(
       { error: "Clerk is not configured for account registration yet" },
       { status: 503 },
@@ -16,12 +21,14 @@ export async function POST() {
   const { userId } = await auth();
 
   if (!userId) {
+    logger.success({ authenticated: false });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const priceId = getProPriceId();
 
   if (!priceId) {
+    logger.success({ priceConfigured: false, userId });
     return NextResponse.json(
       { error: "Missing STRIPE_PRICE_PRO_MONTHLY environment variable" },
       { status: 503 },
@@ -73,8 +80,14 @@ export async function POST() {
       },
     });
 
+    logger.success({
+      userId,
+      customerId,
+      sessionId: session.id,
+    });
     return NextResponse.json({ url: session.url });
   } catch (cause) {
+    await logger.failure(cause, { userId });
     return NextResponse.json(
       {
         error: cause instanceof Error ? cause.message : "Unable to start Pro checkout",
