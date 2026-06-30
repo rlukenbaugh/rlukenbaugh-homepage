@@ -22,8 +22,9 @@ Production-target Next.js app for `skiesready.com`.
 2. Add Clerk keys
 3. Add Stripe keys and a `STRIPE_PRICE_PRO_MONTHLY`
 4. Add `RESEND_API_KEY` and `RESEND_FROM_EMAIL` if you want branded Pro lifecycle emails
-5. Add an optional `ERROR_WEBHOOK_URL` if you want server errors forwarded outside Vercel logs
-6. Add an `OPENWEATHER_API_KEY` for live forecast data
+5. Add `ALERT_EMAIL_TO` if you want direct email alerts for route failures
+6. Add an optional `ERROR_WEBHOOK_URL` if you also want server errors forwarded to an external webhook
+7. Add an `OPENWEATHER_API_KEY` for live forecast data
 
 ## Commands
 

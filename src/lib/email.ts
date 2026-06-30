@@ -17,8 +17,16 @@ function getFromEmail() {
   return process.env.RESEND_FROM_EMAIL?.trim() || "";
 }
 
+export function getAlertEmailTo() {
+  return process.env.ALERT_EMAIL_TO?.trim() || "";
+}
+
 export function isTransactionalEmailConfigured() {
   return Boolean(getResendApiKey() && getFromEmail());
+}
+
+export function isAlertEmailConfigured() {
+  return Boolean(isTransactionalEmailConfigured() && getAlertEmailTo());
 }
 
 function getResendClient() {
@@ -62,4 +70,23 @@ export async function sendTransactionalEmail({
     console.error("Failed to send transactional email", error);
     return { skipped: false as const };
   }
+}
+
+export async function sendAlertEmail(input: {
+  subject: string;
+  html: string;
+  text: string;
+  idempotencyKey?: string;
+}) {
+  if (!isAlertEmailConfigured()) {
+    return { skipped: true as const };
+  }
+
+  return sendTransactionalEmail({
+    to: getAlertEmailTo(),
+    subject: input.subject,
+    html: input.html,
+    text: input.text,
+    idempotencyKey: input.idempotencyKey,
+  });
 }

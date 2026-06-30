@@ -23,6 +23,7 @@ Add these in Vercel for the Production environment:
 - `STRIPE_WEBHOOK_SECRET=...`
 - `RESEND_API_KEY=...` for custom Skies Ready lifecycle emails
 - `RESEND_FROM_EMAIL=...` such as `hello@skiesready.com`
+- `ALERT_EMAIL_TO=...` if you want direct error alert emails
 - `ERROR_WEBHOOK_URL=...` if you want route failures forwarded to an external incident inbox or webhook
 - `OPENWEATHER_API_KEY=...`
 - `OPENWEATHER_FORECAST_BASE_URL=...` only if you need a non-default endpoint
@@ -88,4 +89,5 @@ Run these in production after deploy:
 - `Team` pricing has been intentionally removed.
 - If Clerk or Stripe secrets are missing, the app shows setup fallbacks instead of a full live auth flow.
 - If Resend secrets are missing, billing still works, but custom Skies Ready Pro emails will not send.
+- If `ALERT_EMAIL_TO` is set and Resend is configured, route failures can also be emailed directly to you.
 - Vercel Analytics and Speed Insights are wired into the app layout, and server routes now emit structured logs for forecast, billing, and webhook failures.
