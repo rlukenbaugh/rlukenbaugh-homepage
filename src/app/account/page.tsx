@@ -77,11 +77,7 @@ export default async function AccountPage() {
             <h2 className="mt-3 text-2xl font-semibold text-white">
               {subscription?.isPro ? "Pro" : "Free"}
             </h2>
-            <p className="mt-2 text-sm leading-7 text-slate-300">
-              {subscription?.isPro
-                ? `Status: ${subscription.status}. Use the billing portal to update payment methods, cancel, or resume service.`
-                : "This account is on the Free plan. Start the Pro trial to test Stripe checkout and recurring billing."}
-            </p>
+            <p className="mt-2 text-sm leading-7 text-slate-300">{getSubscriptionCopy(subscription)}</p>
             <div className="mt-5">
               {subscription?.isPro ? (
                 <BillingActionButton
@@ -104,4 +100,30 @@ export default async function AccountPage() {
       </div>
     </main>
   );
+}
+
+function formatCancelDetail(cancelAt: string | null) {
+  if (!cancelAt) {
+    return "at the end of the current billing period";
+  }
+
+  return `on ${new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(cancelAt))}`;
+}
+
+function getSubscriptionCopy(subscription: Awaited<ReturnType<typeof getViewerSubscriptionState>>) {
+  if (!subscription?.isPro) {
+    return "This account is on the Free plan. Start the Pro trial to test Stripe checkout and recurring billing.";
+  }
+
+  if (subscription.cancelAtPeriodEnd) {
+    return `Status: ${subscription.status}. This subscription is scheduled to cancel ${formatCancelDetail(
+      subscription.cancelAt,
+    )}. Use the billing portal to update payment methods or resume service.`;
+  }
+
+  return `Status: ${subscription.status}. Use the billing portal to update payment methods, cancel, or resume service.`;
 }

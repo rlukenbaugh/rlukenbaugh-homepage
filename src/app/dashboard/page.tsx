@@ -75,11 +75,7 @@ export default async function DashboardPage() {
           <DashboardCard
             label="Current plan"
             value={subscription?.isPro ? "Pro" : "Free"}
-            detail={
-              subscription?.isPro
-                ? `Status: ${subscription.status}`
-                : "Upgrade to Pro to test recurring billing"
-            }
+            detail={getPlanDetail(subscription)}
           />
           <DashboardCard
             label="Saved location"
@@ -89,11 +85,7 @@ export default async function DashboardPage() {
           <DashboardCard
             label="Billing state"
             value={subscription?.stripeCustomerId ? "Connected" : "Not linked"}
-            detail={
-              subscription?.stripeCustomerId
-                ? "Stripe customer record detected"
-                : "Created automatically on first checkout"
-            }
+            detail={getBillingDetail(subscription)}
           />
         </section>
 
@@ -104,6 +96,45 @@ export default async function DashboardPage() {
       </div>
     </main>
   );
+}
+
+function formatCancelDetail(cancelAt: string | null) {
+  if (!cancelAt) {
+    return "at the end of the current billing period";
+  }
+
+  return `on ${new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(cancelAt))}`;
+}
+
+function getPlanDetail(subscription: Awaited<ReturnType<typeof getViewerSubscriptionState>>) {
+  if (!subscription?.isPro) {
+    return "Upgrade to Pro to test recurring billing";
+  }
+
+  if (subscription.cancelAtPeriodEnd) {
+    return `Status: ${subscription.status}. Cancellation is scheduled ${formatCancelDetail(
+      subscription.cancelAt,
+    )}.`;
+  }
+
+  return `Status: ${subscription.status}`;
+}
+
+function getBillingDetail(subscription: Awaited<ReturnType<typeof getViewerSubscriptionState>>) {
+  if (!subscription?.stripeCustomerId) {
+    return "Created automatically on first checkout";
+  }
+
+  if (subscription.cancelAtPeriodEnd) {
+    return `Stripe customer record detected. Cancellation is scheduled ${formatCancelDetail(
+      subscription.cancelAt,
+    )}.`;
+  }
+
+  return "Stripe customer record detected";
 }
 
 function AuthSetupRequired() {

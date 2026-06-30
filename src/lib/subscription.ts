@@ -13,6 +13,8 @@ export type SubscriptionState = {
   tier: SubscriptionTier;
   status: BillingStatus;
   isPro: boolean;
+  cancelAtPeriodEnd: boolean;
+  cancelAt: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
 };
@@ -20,6 +22,8 @@ export type SubscriptionState = {
 type BillingMetadata = Partial<{
   tier: SubscriptionTier;
   status: BillingStatus;
+  cancelAtPeriodEnd: boolean;
+  cancelAt: string;
   stripeCustomerId: string;
   stripeSubscriptionId: string;
 }>;
@@ -33,6 +37,8 @@ function normalizeBillingMetadata(raw: unknown): SubscriptionState {
     tier,
     status,
     isPro: tier === "pro" && (status === "active" || status === "trialing"),
+    cancelAtPeriodEnd: Boolean(billing.cancelAtPeriodEnd),
+    cancelAt: billing.cancelAt || null,
     stripeCustomerId: billing.stripeCustomerId || null,
     stripeSubscriptionId: billing.stripeSubscriptionId || null,
   };
@@ -71,6 +77,8 @@ export async function updateUserBillingMetadata(
   const billing = {
     tier: partial.tier ?? current.tier,
     status: partial.status ?? current.status,
+    cancelAtPeriodEnd: partial.cancelAtPeriodEnd ?? current.cancelAtPeriodEnd,
+    cancelAt: partial.cancelAt ?? current.cancelAt ?? undefined,
     stripeCustomerId: partial.stripeCustomerId ?? current.stripeCustomerId ?? undefined,
     stripeSubscriptionId:
       partial.stripeSubscriptionId ?? current.stripeSubscriptionId ?? undefined,
