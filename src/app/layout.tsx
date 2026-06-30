@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { SiteFooter } from "@/components/site-footer";
 import { isClerkConfigured } from "@/lib/site";
 import "./globals.css";
@@ -78,6 +79,12 @@ export default async function RootLayout({
       <body className="min-h-full">
         {content}
         <SiteFooter />
+        <Script
+          data-cf-beacon='{"token": "ddbe619952ba413ca9c937a2e8ff5308"}'
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          strategy="afterInteractive"
+        />
         <Analytics />
         <SpeedInsights />
       </body>
