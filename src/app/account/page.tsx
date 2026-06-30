@@ -60,6 +60,12 @@ export default async function AccountPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:bg-white/[0.04]"
+              href="/"
+            >
+              Home
+            </Link>
+            <Link
+              className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:bg-white/[0.04]"
               href="/dashboard"
             >
               Dashboard
