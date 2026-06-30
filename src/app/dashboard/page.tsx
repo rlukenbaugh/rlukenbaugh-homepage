@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BillingActionButton } from "@/components/billing-action-button";
 import { ForecastExplorer } from "@/components/forecast-explorer";
+import { SignOutButtonPill } from "@/components/sign-out-button";
 import { getOptionalAuth, getOptionalCurrentUser } from "@/lib/auth";
 import { getForecastForQuery } from "@/lib/forecast";
 import { getViewerSubscriptionState } from "@/lib/subscription";
@@ -55,6 +56,7 @@ export default async function DashboardPage() {
             >
               Account
             </Link>
+            <SignOutButtonPill className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:bg-white/[0.04]" />
             {subscription?.isPro ? (
               <BillingActionButton
                 className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"

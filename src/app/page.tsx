@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, BadgeCheck, CloudRain, Radar, ShieldCheck } from "lucide-react";
 import { ForecastExplorer } from "@/components/forecast-explorer";
 import { PricingSection } from "@/components/pricing-section";
+import { SignOutButtonPill } from "@/components/sign-out-button";
 import { getOptionalAuth } from "@/lib/auth";
 import { getForecastForQuery } from "@/lib/forecast";
 import { getViewerSubscriptionState } from "@/lib/subscription";
@@ -41,9 +42,12 @@ export default async function HomePage() {
                 Pricing
               </Link>
               {userId ? (
-                <Link className="rounded-full px-4 py-2 hover:bg-white/[0.05]" href="/dashboard">
-                  Dashboard
-                </Link>
+                <>
+                  <Link className="rounded-full px-4 py-2 hover:bg-white/[0.05]" href="/dashboard">
+                    Dashboard
+                  </Link>
+                  <SignOutButtonPill className="rounded-full px-4 py-2 hover:bg-white/[0.05]" />
+                </>
               ) : (
                 <Link className="rounded-full px-4 py-2 hover:bg-white/[0.05]" href="/sign-in">
                   Sign in

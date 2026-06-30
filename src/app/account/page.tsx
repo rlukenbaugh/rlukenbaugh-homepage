@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BillingActionButton } from "@/components/billing-action-button";
+import { SignOutButtonPill } from "@/components/sign-out-button";
 import { getOptionalAuth, getOptionalCurrentUser } from "@/lib/auth";
 import { isClerkConfigured } from "@/lib/site";
 import { getViewerSubscriptionState } from "@/lib/subscription";
@@ -50,13 +51,21 @@ export default async function AccountPage() {
             <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">
               Billing and identity
             </h1>
+            <p className="mt-3 text-sm leading-7 text-slate-300">
+              Signed in as{" "}
+              {user?.fullName || user?.primaryEmailAddress?.emailAddress || "your Skies Ready account"}
+              .
+            </p>
           </div>
-          <Link
-            className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:bg-white/[0.04]"
-            href="/dashboard"
-          >
-            Dashboard
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:bg-white/[0.04]"
+              href="/dashboard"
+            >
+              Dashboard
+            </Link>
+            <SignOutButtonPill className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:bg-white/[0.04]" />
+          </div>
         </div>
 
         <section className="grid gap-6 md:grid-cols-[0.95fr_1.05fr]">
