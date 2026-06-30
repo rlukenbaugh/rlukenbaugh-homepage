@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Radar, ShieldCheck } from "lucide-react";
 import { ForecastExplorer } from "@/components/forecast-explorer";
@@ -7,6 +8,21 @@ import { getOptionalAuth } from "@/lib/auth";
 import { getForecastForQuery } from "@/lib/forecast";
 import { getViewerSubscriptionState } from "@/lib/subscription";
 import { siteConfig } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: "Drone Weather Checker",
+  description:
+    "Use Skies Ready as a drone weather checker to see wind, gusts, visibility, cloud cover, rain risk, and a five-day drone flight forecast before you fly.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Skies Ready Drone Weather Checker",
+    description:
+      "See if it is safe to fly your drone today with wind, gust, visibility, and rain checks in one drone flight forecast.",
+    url: "https://skiesready.com",
+  },
+};
 
 export default async function HomePage({
   searchParams,
@@ -23,9 +39,28 @@ export default async function HomePage({
     getViewerSubscriptionState(),
     getForecastForQuery(initialQuery),
   ]);
+  const appSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Skies Ready",
+    applicationCategory: "WeatherApplication",
+    operatingSystem: "Web",
+    url: "https://skiesready.com",
+    description:
+      "Drone weather checker and drone flight forecast for wind, gusts, visibility, cloud cover, and rain risk.",
+    offers: {
+      "@type": "Offer",
+      price: "5.00",
+      priceCurrency: "USD",
+    },
+  };
 
   return (
     <main className="app-shell">
+      <script
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
+        type="application/ld+json"
+      />
       <div className="mx-auto w-full max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
         <header className="rounded-[2rem] border border-white/10 bg-white/[0.03] px-5 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -167,6 +202,55 @@ export default async function HomePage({
           />
         </section>
 
+        <section className="grid gap-4 pb-14 lg:grid-cols-[1.15fr_0.85fr]">
+          <article className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">
+              Drone weather checker
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+              Check drone flying conditions near you before takeoff
+            </h2>
+            <p className="mt-4 max-w-3xl text-sm leading-8 text-slate-300">
+              Skies Ready helps you answer common preflight questions like: Is it safe to fly my
+              drone today? What is the wind forecast for my launch spot? Will gusts, visibility, or
+              rain risk make this a caution or risky flight window?
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <SearchPhraseCard
+                copy="See a drone wind forecast, gust risk, and visibility in one place."
+                title="Drone wind forecast"
+              />
+              <SearchPhraseCard
+                copy="Compare current launch risk with upcoming windows and five-day outlook cards."
+                title="Drone launch weather"
+              />
+            </div>
+          </article>
+
+          <article className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">
+              Who it helps
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+              Built for recreational and Part 107 preflight planning
+            </h2>
+            <ul className="mt-5 space-y-3 text-sm leading-7 text-slate-300">
+              <li className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                Check if wind and gusts are inside your comfort range before you pack up and head
+                out.
+              </li>
+              <li className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                Review a drone weather checker that turns raw conditions into good, caution, or
+                risky launch guidance.
+              </li>
+              <li className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                Use FAA reminder links alongside weather checks so legal airspace review stays part
+                of every flight decision.
+              </li>
+            </ul>
+          </article>
+        </section>
+
         <section className="pb-10" id="pricing">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -187,6 +271,15 @@ export default async function HomePage({
         </section>
       </div>
     </main>
+  );
+}
+
+function SearchPhraseCard({ title, copy }: { title: string; copy: string }) {
+  return (
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4">
+      <h3 className="text-lg font-semibold text-white">{title}</h3>
+      <p className="mt-2 text-sm leading-7 text-slate-300">{copy}</p>
+    </div>
   );
 }
 

@@ -4,7 +4,11 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms",
-  description: "Skies Ready terms of use.",
+  description:
+    "Read the Skies Ready terms of use for drone weather guidance, paid subscriptions, and pilot responsibility.",
+  alternates: {
+    canonical: "/terms",
+  },
 };
 
 export default function TermsPage() {

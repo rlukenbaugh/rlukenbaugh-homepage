@@ -4,7 +4,11 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Support",
-  description: "Skies Ready support and contact details.",
+  description:
+    "Get Skies Ready support for drone flight forecast questions, account access, and Pro billing help.",
+  alternates: {
+    canonical: "/support",
+  },
 };
 
 export default function SupportPage() {

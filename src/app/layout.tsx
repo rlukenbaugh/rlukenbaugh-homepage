@@ -18,12 +18,34 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://skiesready.com"),
+  applicationName: "Skies Ready",
   title: {
     default: "Skies Ready | Drone Flight Forecast",
     template: "%s | Skies Ready",
   },
   description:
-    "Skies Ready helps drone pilots make safer go or no-go decisions with live forecast search, saved launch planning, and Pro-grade billing-ready account tooling.",
+    "Skies Ready is a drone weather checker and drone flight forecast tool for wind, gusts, visibility, cloud cover, rain risk, and safer preflight planning.",
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    url: "https://skiesready.com",
+    siteName: "Skies Ready",
+    title: "Skies Ready | Drone Flight Forecast",
+    description:
+      "Check drone flight weather, wind, gusts, visibility, cloud cover, and rain risk before you launch.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Skies Ready | Drone Flight Forecast",
+    description:
+      "Check drone flight weather, wind, gusts, visibility, cloud cover, and rain risk before you launch.",
+  },
 };
 
 export default async function RootLayout({

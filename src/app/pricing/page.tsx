@@ -6,7 +6,17 @@ import { getViewerSubscriptionState } from "@/lib/subscription";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Free and Pro pricing for Skies Ready drone forecast planning.",
+  description:
+    "Compare free and Pro pricing for the Skies Ready drone weather checker, saved launch locations, five-day outlooks, and repeat preflight planning.",
+  alternates: {
+    canonical: "/pricing",
+  },
+  openGraph: {
+    title: "Skies Ready Pricing",
+    description:
+      "Compare free and Pro features for drone flight forecast planning, saved launch spots, and deeper launch guidance.",
+    url: "https://skiesready.com/pricing",
+  },
 };
 
 export default async function PricingPage() {
@@ -35,11 +45,11 @@ export default async function PricingPage() {
             Pricing
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
-            One paid plan, built for a clean first launch
+            Free weather checks with one clear Pro upgrade path
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">
-            Skies Ready now focuses on a simple `Free` plus `Pro` structure so registration and
-            billing can be tested without the extra product complexity of team administration.
+            Compare the free drone weather checker with Pro planning tools like saved launch
+            locations, recent forecast history, and deeper flight-condition guidance.
           </p>
         </section>
 

@@ -4,7 +4,11 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: "Skies Ready privacy policy.",
+  description:
+    "Read the Skies Ready privacy policy for account data, billing, saved locations, and drone forecast usage information.",
+  alternates: {
+    canonical: "/privacy",
+  },
 };
 
 export default function PrivacyPage() {
