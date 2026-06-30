@@ -85,6 +85,30 @@ function deriveStateFromStripeSubscription(
   };
 }
 
+async function getLatestStripeSubscription(current: SubscriptionState) {
+  const stripe = getStripe();
+
+  if (current.stripeSubscriptionId) {
+    try {
+      return await stripe.subscriptions.retrieve(current.stripeSubscriptionId);
+    } catch {
+      // Fall back to customer lookup below.
+    }
+  }
+
+  if (!current.stripeCustomerId) {
+    return null;
+  }
+
+  const subscriptions = await stripe.subscriptions.list({
+    customer: current.stripeCustomerId,
+    status: "all",
+    limit: 10,
+  });
+
+  return subscriptions.data.sort((left, right) => right.created - left.created)[0] || null;
+}
+
 export async function getViewerSubscriptionState() {
   if (!isClerkConfigured()) {
     return null;
@@ -104,15 +128,20 @@ export async function getViewerSubscriptionState() {
   }
 
   try {
-    const stripe = getStripe();
-    const stripeSubscription = await stripe.subscriptions.retrieve(current.stripeSubscriptionId);
+    const stripeSubscription = await getLatestStripeSubscription(current);
+
+    if (!stripeSubscription) {
+      return current;
+    }
+
     const reconciled = deriveStateFromStripeSubscription(current, stripeSubscription);
 
     if (
       reconciled.tier !== current.tier ||
       reconciled.status !== current.status ||
       reconciled.cancelAtPeriodEnd !== current.cancelAtPeriodEnd ||
-      reconciled.cancelAt !== current.cancelAt
+      reconciled.cancelAt !== current.cancelAt ||
+      reconciled.stripeSubscriptionId !== current.stripeSubscriptionId
     ) {
       await updateUserBillingMetadata(user.id, reconciled);
     }
