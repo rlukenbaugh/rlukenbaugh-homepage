@@ -11,8 +11,8 @@ export function SiteFooter() {
               {siteConfig.name}
             </p>
             <p className="mt-3 text-sm leading-7 text-slate-300">
-              Live drone launch forecasting with protected accounts, recurring Pro billing, and
-              operational weather checks in imperial units.
+              Drone flight weather guidance with simple launch ratings, FAA reminder links, and
+              forecast checks in imperial units.
             </p>
           </div>
           <nav className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-slate-300 md:max-w-sm md:justify-end">

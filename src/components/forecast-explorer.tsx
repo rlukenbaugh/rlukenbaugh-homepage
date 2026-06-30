@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useState } from "react";
-import type { ForecastPayload } from "@/lib/forecast";
+import { FLIGHT_RISK_THRESHOLDS, type ForecastPayload, type ForecastWindow } from "@/lib/forecast";
 import type { LocationEntry } from "@/lib/user-locations";
 import { WeatherIcon } from "@/components/weather-icon";
 
@@ -50,6 +50,7 @@ export function ForecastExplorer({
 
   const selectedWindow = forecast.windows[selectedIndex] || forecast.windows[0];
   const locationLabel = `${forecast.location.name}${forecast.location.region ? `, ${forecast.location.region}` : ""}`;
+  const reasonSummary = getSuitabilitySummary(selectedWindow);
 
   function searchForecast() {
     setPending(true);
@@ -191,7 +192,7 @@ export function ForecastExplorer({
             onClick={searchForecast}
             type="button"
           >
-            {pending ? "Refreshing..." : "Update forecast"}
+            {pending ? "Checking..." : "Check forecast"}
           </button>
         </div>
 
@@ -364,6 +365,13 @@ export function ForecastExplorer({
             Selected window
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">{selectedWindow.timeLabel}</h3>
+          <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/80">
+              Why {selectedWindow.suitability}?
+            </p>
+            <p className="mt-2 text-sm leading-7 text-white">{reasonSummary.title}</p>
+            <p className="mt-2 text-sm leading-7 text-slate-300">{reasonSummary.detail}</p>
+          </div>
           <div className="mt-4 grid gap-3">
             <Metric label="Wind at launch" value={`${selectedWindow.windMph} mph`} />
             <Metric label="Humidity" value={`${selectedWindow.humidity}%`} />
@@ -371,6 +379,34 @@ export function ForecastExplorer({
             <Metric label="Visibility" value={`${selectedWindow.visibilityMiles} mi`} />
             <Metric label="Precip chance" value={`${selectedWindow.precipProbability}%`} />
             <Metric label="Cloud cover" value={`${selectedWindow.cloudCover}%`} />
+          </div>
+
+          <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/80">
+              Flight thresholds
+            </p>
+            <div className="mt-3 overflow-x-auto">
+              <table className="min-w-full text-left text-sm text-slate-300">
+                <thead className="text-xs uppercase tracking-[0.14em] text-slate-400">
+                  <tr>
+                    <th className="pb-2 pr-4">Condition</th>
+                    <th className="pb-2 pr-4">Good</th>
+                    <th className="pb-2 pr-4">Caution</th>
+                    <th className="pb-2">Risky</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {THRESHOLD_ROWS.map((row) => (
+                    <tr className="border-t border-white/10" key={row.label}>
+                      <td className="py-3 pr-4 font-semibold text-white">{row.label}</td>
+                      <td className="py-3 pr-4">{row.good}</td>
+                      <td className="py-3 pr-4">{row.caution}</td>
+                      <td className="py-3">{row.risky}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {canManageLocations ? (
@@ -423,6 +459,47 @@ export function ForecastExplorer({
             </div>
           ) : null}
 
+          <div className="mt-5 rounded-[1.5rem] border border-cyan-300/15 bg-cyan-400/8 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/80">
+              Before you fly
+            </p>
+            <p className="mt-2 text-sm leading-7 text-slate-300">
+              This forecast checks weather risk only. Always confirm FAA airspace, LAANC authorization,
+              Temporary Flight Restrictions, local rules, and Remote ID requirements before launch.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a
+                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:bg-white/[0.04]"
+                href="https://www.faa.gov/uas/getting_started/b4ufly"
+                rel="noreferrer"
+                target="_blank"
+              >
+                Check FAA B4UFLY
+              </a>
+              <a
+                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:bg-white/[0.04]"
+                href="https://www.faa.gov/uas/programs_partnerships/data_exchange"
+                rel="noreferrer"
+                target="_blank"
+              >
+                Learn about LAANC
+              </a>
+              <a
+                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:bg-white/[0.04]"
+                href="https://tfr.faa.gov/tfr2/list.html"
+                rel="noreferrer"
+                target="_blank"
+              >
+                Check TFRs
+              </a>
+            </div>
+            <p className="mt-4 text-sm leading-7 text-slate-400">
+              Skies Ready provides weather-based flight guidance only. It does not authorize drone
+              flights, replace FAA airspace checks, or guarantee safe operation. The pilot remains
+              responsible for FAA rules, local laws, manufacturer limits, and real-world conditions.
+            </p>
+          </div>
+
           <p className="mt-4 text-sm text-slate-300">{forecast.providerNote}</p>
           {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
         </div>
@@ -430,6 +507,33 @@ export function ForecastExplorer({
     </section>
   );
 }
+
+const THRESHOLD_ROWS = [
+  {
+    label: "Wind",
+    good: FLIGHT_RISK_THRESHOLDS.windMph.goodLabel,
+    caution: FLIGHT_RISK_THRESHOLDS.windMph.cautionLabel,
+    risky: FLIGHT_RISK_THRESHOLDS.windMph.riskyLabel,
+  },
+  {
+    label: "Gusts",
+    good: FLIGHT_RISK_THRESHOLDS.gustMph.goodLabel,
+    caution: FLIGHT_RISK_THRESHOLDS.gustMph.cautionLabel,
+    risky: FLIGHT_RISK_THRESHOLDS.gustMph.riskyLabel,
+  },
+  {
+    label: "Visibility",
+    good: FLIGHT_RISK_THRESHOLDS.visibilityMiles.goodLabel,
+    caution: FLIGHT_RISK_THRESHOLDS.visibilityMiles.cautionLabel,
+    risky: FLIGHT_RISK_THRESHOLDS.visibilityMiles.riskyLabel,
+  },
+  {
+    label: "Rain chance",
+    good: FLIGHT_RISK_THRESHOLDS.precipProbability.goodLabel,
+    caution: FLIGHT_RISK_THRESHOLDS.precipProbability.cautionLabel,
+    risky: FLIGHT_RISK_THRESHOLDS.precipProbability.riskyLabel,
+  },
+] as const;
 
 function formatClock(value: string | null) {
   if (!value) {
@@ -449,6 +553,66 @@ function Metric({ label, value }: { label: string; value: string }) {
       <span className="font-semibold text-white">{value}</span>
     </div>
   );
+}
+
+function getSuitabilitySummary(window: ForecastWindow) {
+  const reasons: string[] = [];
+
+  if (window.windMph >= FLIGHT_RISK_THRESHOLDS.windMph.riskyMin) {
+    reasons.push(
+      `Wind is above the risky threshold at ${window.windMph} mph, which can reduce stability and increase battery use.`,
+    );
+  } else if (window.windMph >= FLIGHT_RISK_THRESHOLDS.windMph.cautionMin) {
+    reasons.push(
+      `Wind is in the caution range at ${window.windMph} mph, so handling may feel less forgiving during takeoff and return.`,
+    );
+  }
+
+  if (window.gustMph >= FLIGHT_RISK_THRESHOLDS.gustMph.riskyMin) {
+    reasons.push(
+      `Gusts are strong at ${window.gustMph} mph and can disrupt hover stability and return-to-home accuracy.`,
+    );
+  } else if (window.gustMph >= FLIGHT_RISK_THRESHOLDS.gustMph.cautionMin) {
+    reasons.push(
+      `Gusts are in the caution range at ${window.gustMph} mph, which can create uneven control inputs.`,
+    );
+  }
+
+  if (window.visibilityMiles <= FLIGHT_RISK_THRESHOLDS.visibilityMiles.riskyMax) {
+    reasons.push(
+      `Visibility is low at ${window.visibilityMiles} miles, which can hurt line-of-sight awareness.`,
+    );
+  } else if (window.visibilityMiles <= FLIGHT_RISK_THRESHOLDS.visibilityMiles.cautionMax) {
+    reasons.push(
+      `Visibility is in the caution range at ${window.visibilityMiles} miles, so visual tracking may be reduced.`,
+    );
+  }
+
+  if (window.precipProbability >= FLIGHT_RISK_THRESHOLDS.precipProbability.riskyMin) {
+    reasons.push(
+      `Rain chance is elevated at ${window.precipProbability}%, increasing the odds of wet operating conditions.`,
+    );
+  } else if (window.precipProbability >= FLIGHT_RISK_THRESHOLDS.precipProbability.cautionMin) {
+    reasons.push(
+      `Rain chance is ${window.precipProbability}%, which is enough to keep an eye on nearby cells and timing.`,
+    );
+  }
+
+  if (!reasons.length) {
+    return {
+      title: "Conditions are within the current good thresholds for this window.",
+      detail:
+        "Wind, gusts, visibility, and rain risk are all staying inside the lower-risk bands used by Skies Ready.",
+    };
+  }
+
+  return {
+    title:
+      window.suitability === "risky"
+        ? "One or more launch factors are in the risky range."
+        : "One or more launch factors are in the caution range.",
+    detail: reasons.slice(0, 2).join(" "),
+  };
 }
 
 function LocationList({

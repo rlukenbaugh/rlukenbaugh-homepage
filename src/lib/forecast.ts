@@ -76,6 +76,37 @@ export type ForecastPayload = {
   updatedAt: string;
 };
 
+export const FLIGHT_RISK_THRESHOLDS = {
+  windMph: {
+    cautionMin: 10,
+    riskyMin: 19,
+    goodLabel: "Under 10 mph",
+    cautionLabel: "10-18 mph",
+    riskyLabel: "Over 18 mph",
+  },
+  gustMph: {
+    cautionMin: 15,
+    riskyMin: 26,
+    goodLabel: "Under 15 mph",
+    cautionLabel: "15-25 mph",
+    riskyLabel: "Over 25 mph",
+  },
+  visibilityMiles: {
+    cautionMax: 5,
+    riskyMax: 2,
+    goodLabel: "Over 5 mi",
+    cautionLabel: "3-5 mi",
+    riskyLabel: "Under 3 mi",
+  },
+  precipProbability: {
+    cautionMin: 10,
+    riskyMin: 31,
+    goodLabel: "Under 10%",
+    cautionLabel: "10-30%",
+    riskyLabel: "Over 30%",
+  },
+} as const;
+
 type GeocodeLocation = {
   name: string;
   state?: string;
@@ -235,19 +266,19 @@ function assessSuitability(input: {
   visibilityMiles: number;
 }) {
   if (
-    input.windMph >= 18 ||
-    input.gustMph >= 25 ||
-    input.precipProbability >= 50 ||
-    input.visibilityMiles <= 2
+    input.windMph >= FLIGHT_RISK_THRESHOLDS.windMph.riskyMin ||
+    input.gustMph >= FLIGHT_RISK_THRESHOLDS.gustMph.riskyMin ||
+    input.precipProbability >= FLIGHT_RISK_THRESHOLDS.precipProbability.riskyMin ||
+    input.visibilityMiles <= FLIGHT_RISK_THRESHOLDS.visibilityMiles.riskyMax
   ) {
     return "risky" as const;
   }
 
   if (
-    input.windMph >= 11 ||
-    input.gustMph >= 18 ||
-    input.precipProbability >= 25 ||
-    input.visibilityMiles <= 5
+    input.windMph >= FLIGHT_RISK_THRESHOLDS.windMph.cautionMin ||
+    input.gustMph >= FLIGHT_RISK_THRESHOLDS.gustMph.cautionMin ||
+    input.precipProbability >= FLIGHT_RISK_THRESHOLDS.precipProbability.cautionMin ||
+    input.visibilityMiles <= FLIGHT_RISK_THRESHOLDS.visibilityMiles.cautionMax
   ) {
     return "caution" as const;
   }
@@ -314,7 +345,7 @@ function deriveAlerts(input: {
 }) {
   const alerts: ForecastAlert[] = [];
 
-  if (input.currentGustMph >= 25) {
+  if (input.currentGustMph >= FLIGHT_RISK_THRESHOLDS.gustMph.riskyMin) {
     alerts.push({
       severity: "warning",
       title: "Strong gusts in the launch area",
@@ -322,7 +353,7 @@ function deriveAlerts(input: {
     });
   }
 
-  if (input.currentVisibilityMiles <= 3) {
+  if (input.currentVisibilityMiles <= FLIGHT_RISK_THRESHOLDS.visibilityMiles.riskyMax + 1) {
     alerts.push({
       severity: "warning",
       title: "Reduced visibility",
@@ -330,16 +361,25 @@ function deriveAlerts(input: {
     });
   }
 
-  const rainWindow = input.windows.find((window) => window.precipProbability >= 40);
+  const rainWindow = input.windows.find(
+    (window) =>
+      window.precipProbability >= FLIGHT_RISK_THRESHOLDS.precipProbability.cautionMin,
+  );
   if (rainWindow) {
     alerts.push({
-      severity: rainWindow.precipProbability >= 60 ? "warning" : "info",
+      severity:
+        rainWindow.precipProbability >= FLIGHT_RISK_THRESHOLDS.precipProbability.riskyMin
+          ? "warning"
+          : "info",
       title: "Rain risk in the next forecast windows",
       detail: `${rainWindow.precipProbability}% precipitation potential is showing around ${rainWindow.timeLabel}.`,
     });
   }
 
-  if (input.currentWindMph >= 18 && !alerts.some((alert) => alert.title.includes("gusts"))) {
+  if (
+    input.currentWindMph >= FLIGHT_RISK_THRESHOLDS.windMph.riskyMin &&
+    !alerts.some((alert) => alert.title.includes("gusts"))
+  ) {
     alerts.push({
       severity: "warning",
       title: "Sustained wind is elevated",

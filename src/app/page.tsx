@@ -1,19 +1,27 @@
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, CloudRain, Radar, ShieldCheck } from "lucide-react";
+import { ArrowRight, BadgeCheck, Radar, ShieldCheck } from "lucide-react";
 import { ForecastExplorer } from "@/components/forecast-explorer";
 import { PricingSection } from "@/components/pricing-section";
 import { SignOutButtonPill } from "@/components/sign-out-button";
 import { getOptionalAuth } from "@/lib/auth";
 import { getForecastForQuery } from "@/lib/forecast";
 import { getViewerSubscriptionState } from "@/lib/subscription";
-import { getLaunchReadiness, siteConfig } from "@/lib/site";
+import { siteConfig } from "@/lib/site";
 
-export default async function HomePage() {
-  const readiness = getLaunchReadiness();
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { userId } = await getOptionalAuth();
+  const params = searchParams ? await searchParams : {};
+  const initialQuery =
+    typeof params.query === "string" && params.query.trim()
+      ? params.query.trim()
+      : siteConfig.defaultLocationQuery;
   const [subscription, forecast] = await Promise.all([
     getViewerSubscriptionState(),
-    getForecastForQuery(siteConfig.defaultLocationQuery),
+    getForecastForQuery(initialQuery),
   ]);
 
   return (
@@ -67,30 +75,58 @@ export default async function HomePage() {
         <section className="grid gap-8 pb-14 pt-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div>
             <p className="inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100">
-              Real paid launch target
+              Drone flight weather
             </p>
             <h1 className="mt-6 max-w-3xl text-5xl font-semibold tracking-tight text-white sm:text-6xl">
-              Turn drone launch decisions into a subscription product pilots can trust.
+              Know if the sky is drone-ready before you launch.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-              Skies Ready combines live forecast search, protected user accounts, and Stripe-backed
-              Pro billing so `skiesready.com` can evolve from demo shell to a real launch-ready
-              product.
+              Check wind, gusts, visibility, clouds, and rain risk in one simple drone flight
+              forecast before you commit to takeoff.
             </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <FeatureStat label="Forecast source" value="Live API" />
-              <FeatureStat label="Billing model" value="Free + Pro" />
-              <FeatureStat label="Launch state" value="Account-ready" />
-            </div>
+            <form action="/" className="mt-8 rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-4" method="get">
+              <label
+                className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80"
+                htmlFor="hero-query"
+              >
+                Enter city, ZIP code, or launch location
+              </label>
+              <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto_auto]">
+                <input
+                  className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none placeholder:text-slate-400"
+                  defaultValue={initialQuery}
+                  id="hero-query"
+                  name="query"
+                  placeholder="Enid, Oklahoma 73701"
+                  type="text"
+                />
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300"
+                  type="submit"
+                >
+                  Check My Flight Conditions
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <Link
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/15 px-5 py-3 font-semibold text-white transition hover:bg-white/[0.04]"
+                  href="#pricing"
+                >
+                  View Pro Features
+                </Link>
+              </div>
+              <p className="mt-3 text-sm text-slate-400">
+                Weather guidance only. Always confirm FAA airspace, LAANC, TFRs, and local rules
+                before you fly.
+              </p>
+            </form>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                className="inline-flex items-center gap-2 rounded-2xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300"
-                href="#pricing"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 px-5 py-3 font-semibold text-white transition hover:bg-white/[0.04]"
+                href="#forecast"
               >
-                View Pro pricing
-                <ArrowRight className="h-4 w-4" />
+                Jump to forecast
               </Link>
               <Link
                 className="inline-flex items-center gap-2 rounded-2xl border border-white/15 px-5 py-3 font-semibold text-white transition hover:bg-white/[0.04]"
@@ -102,37 +138,32 @@ export default async function HomePage() {
           </div>
 
           <div className="space-y-4">
-            <ReadinessCard
-              commercialWeatherConfigured={readiness.commercialWeatherConfigured}
-              clerkConfigured={readiness.clerkConfigured}
-              stripeConfigured={readiness.stripeConfigured}
-              stripeWebhookConfigured={readiness.stripeWebhookConfigured}
-            />
+            <FlightChecksCard />
           </div>
         </section>
 
         <section className="pb-14" id="forecast">
           <ForecastExplorer
             initialForecast={forecast}
-            initialQuery={siteConfig.defaultLocationQuery}
+            initialQuery={initialQuery}
           />
         </section>
 
         <section className="grid gap-4 pb-14 md:grid-cols-3">
           <FeatureCard
-            copy="Auth-ready entry points, protected dashboard routes, and billing-aware account state."
+            copy="Live weather data, clear go or no-go ratings, and plain-English risk explanations for launch planning."
             icon={<ShieldCheck className="h-5 w-5" />}
-            title="Real user accounts"
+            title="Built for preflight checks"
           />
           <FeatureCard
-            copy="Live wind, gust, humidity, visibility, and precipitation checks in imperial units."
+            copy="Wind and gust risk, visibility, rain chance, cloud cover, and five-day outlooks in imperial units."
             icon={<Radar className="h-5 w-5" />}
-            title="Operational forecast logic"
+            title="Drone weather you can scan quickly"
           />
           <FeatureCard
-            copy="Stripe subscription checkout, webhook sync, and customer portal support for Pro."
+            copy="FAA reminder links, weather-only disclaimers, and planning tools that support both recreational and Part 107 prep."
             icon={<BadgeCheck className="h-5 w-5" />}
-            title="Paid plan infrastructure"
+            title="Trust-first launch guidance"
           />
         </section>
 
@@ -143,28 +174,19 @@ export default async function HomePage() {
                 Pricing
               </p>
               <h2 className="mt-2 text-4xl font-semibold tracking-tight text-white">
-                Free forecast access with one clear Pro upgrade path
+                Free weather checks with one clear Pro upgrade path
               </h2>
             </div>
             <p className="max-w-2xl text-sm leading-7 text-slate-300">
-              Team pricing is intentionally removed for the first launch. The product now focuses on
-              an individual operator flow with one recurring Pro plan that is easy to test and easy
-              to sell.
+              Skies Ready focuses on individual drone pilots first. Start with the free forecast
+              workflow, then upgrade only if you want more saved planning power and deeper launch
+              guidance.
             </p>
           </div>
           <PricingSection signedIn={Boolean(userId)} subscription={subscription} />
         </section>
       </div>
     </main>
-  );
-}
-
-function FeatureStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-    </div>
   );
 }
 
@@ -186,72 +208,46 @@ function FeatureCard({
   );
 }
 
-function ReadinessCard({
-  clerkConfigured,
-  stripeConfigured,
-  stripeWebhookConfigured,
-  commercialWeatherConfigured,
-}: ReturnType<typeof getLaunchReadiness>) {
+function FlightChecksCard() {
   const items = [
-    {
-      label: "Clerk auth",
-      ready: clerkConfigured,
-      detail: clerkConfigured ? "Configured for sign up and sign in" : "Add Clerk publishable and secret keys",
-    },
-    {
-      label: "Stripe checkout",
-      ready: stripeConfigured,
-      detail: stripeConfigured ? "Pro subscription checkout can be created" : "Add Stripe secret key and Pro price ID",
-    },
-    {
-      label: "Stripe webhooks",
-      ready: stripeWebhookConfigured,
-      detail: stripeWebhookConfigured ? "Billing state can sync back into accounts" : "Add webhook secret for subscription sync",
-    },
-    {
-      label: "Weather API",
-      ready: commercialWeatherConfigured,
-      detail: commercialWeatherConfigured
-        ? "OpenWeatherMap forecast data is configured"
-        : "Add an OpenWeatherMap API key for live forecast data",
-    },
+    "Wind and gust risk",
+    "Visibility",
+    "Rain chance",
+    "Cloud cover",
+    "Temperature",
+    "Saved launch spots with Pro",
+    "Simple go, caution, or risky rating",
   ];
 
   return (
     <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
       <div className="flex items-center gap-3">
         <div className="rounded-2xl bg-cyan-400/12 p-3 text-cyan-200">
-          <CloudRain className="h-5 w-5" />
+          <ShieldCheck className="h-5 w-5" />
         </div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/80">
-            Launch readiness
+            Drone flight checks
           </p>
-          <h2 className="mt-1 text-2xl font-semibold text-white">What still gates a live paid launch</h2>
+          <h2 className="mt-1 text-2xl font-semibold text-white">
+            Weather guidance built for drone pilots
+          </h2>
         </div>
       </div>
       <div className="mt-5 space-y-3">
         {items.map((item) => (
           <div
             className="flex items-start justify-between gap-4 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3"
-            key={item.label}
+            key={item}
           >
-            <div>
-              <p className="font-semibold text-white">{item.label}</p>
-              <p className="mt-1 text-sm text-slate-300">{item.detail}</p>
-            </div>
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
-                item.ready
-                  ? "bg-emerald-400/15 text-emerald-100"
-                  : "bg-amber-400/15 text-amber-100"
-              }`}
-            >
-              {item.ready ? "Ready" : "Needs setup"}
-            </span>
+            <p className="font-semibold text-white">{item}</p>
           </div>
         ))}
       </div>
+      <p className="mt-5 text-sm leading-7 text-slate-300">
+        Weather conditions can look good and still be illegal to fly. Always confirm FAA airspace,
+        TFRs, LAANC authorization, and local operating rules before launch.
+      </p>
     </section>
   );
 }

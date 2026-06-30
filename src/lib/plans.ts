@@ -24,10 +24,10 @@ export const PRO_PLAN = {
   envKey: "STRIPE_PRICE_PRO_MONTHLY",
   features: [
     "Saved launch locations",
-    "Recent forecast history",
-    "5-day outlook and launch alerts",
-    "Billing portal access",
-    "Priority access to premium data feeds",
+    "Best flight window guidance",
+    "Longer forecast range",
+    "Custom wind and gust limits coming next",
+    "More detailed launch weather data",
   ],
 };
 

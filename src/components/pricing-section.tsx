@@ -17,7 +17,7 @@ export function PricingSection({
         subscription={subscription}
         plan={{
           ...FREE_PLAN,
-          highlight: "Forecast search without billing",
+          highlight: "Check conditions before you launch",
         }}
       />
       <PlanCard
@@ -25,7 +25,7 @@ export function PricingSection({
         subscription={subscription}
         plan={{
           ...PRO_PLAN,
-          highlight: "Launch-ready paid plan with Stripe checkout",
+          highlight: "More planning power for repeat drone flights",
         }}
       />
     </section>
@@ -98,7 +98,7 @@ function PlanCard({
           <BillingActionButton
             className="inline-flex rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300"
             endpoint="/api/customer-portal"
-            label="Manage billing"
+            label="Manage Pro plan"
             pendingLabel="Opening billing..."
           />
         ) : signedIn ? (
