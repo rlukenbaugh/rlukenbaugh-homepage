@@ -21,6 +21,11 @@ export function buildForecastSharePath(value: string) {
   return `/forecast/${slugifyForecastLocation(value)}`;
 }
 
+export function buildForecastShareHref(value: string) {
+  const normalizedValue = value.trim();
+  return `${buildForecastSharePath(normalizedValue)}?query=${encodeURIComponent(normalizedValue)}`;
+}
+
 export function buildForecastShareUrl(value: string) {
-  return `${siteConfig.domain}${buildForecastSharePath(value)}`;
+  return `${siteConfig.domain}${buildForecastShareHref(value)}`;
 }

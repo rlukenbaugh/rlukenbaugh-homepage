@@ -2,7 +2,7 @@
 
 import { startTransition, useState } from "react";
 import Link from "next/link";
-import { buildForecastSharePath, buildForecastShareUrl } from "@/lib/forecast-share";
+import { buildForecastShareHref, buildForecastShareUrl } from "@/lib/forecast-share";
 import { FLIGHT_RISK_THRESHOLDS, type ForecastPayload, type ForecastWindow } from "@/lib/forecast";
 import type { LocationEntry } from "@/lib/user-locations";
 import { WeatherIcon } from "@/components/weather-icon";
@@ -54,11 +54,9 @@ export function ForecastExplorer({
   const selectedWindow = forecast.windows[selectedIndex] || forecast.windows[0];
   const locationLabel = `${forecast.location.name}${forecast.location.region ? `, ${forecast.location.region}` : ""}`;
   const reasonSummary = getSuitabilitySummary(selectedWindow);
-  const shareLocationLabel = [forecast.location.name, forecast.location.region]
-    .filter(Boolean)
-    .join(" ");
-  const sharePath = buildForecastSharePath(shareLocationLabel || query);
-  const shareUrl = buildForecastShareUrl(shareLocationLabel || query);
+  const shareQuery = query.trim() || locationLabel;
+  const sharePath = buildForecastShareHref(shareQuery);
+  const shareUrl = buildForecastShareUrl(shareQuery);
 
   function searchForecast() {
     setPending(true);

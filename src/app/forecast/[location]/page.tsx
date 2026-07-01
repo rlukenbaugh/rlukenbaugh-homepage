@@ -6,11 +6,17 @@ import { getForecastForQuery } from "@/lib/forecast";
 
 type Props = {
   params: Promise<{ location: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { location } = await params;
-  const query = forecastSlugToQuery(location);
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const queryParam = resolvedSearchParams.query;
+  const query =
+    typeof queryParam === "string" && queryParam.trim()
+      ? queryParam.trim()
+      : forecastSlugToQuery(location);
   const titleLocation = query
     .split(" ")
     .map((part) => (part.length <= 2 ? part.toUpperCase() : `${part[0]?.toUpperCase()}${part.slice(1)}`))
@@ -30,9 +36,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ShareableForecastPage({ params }: Props) {
+export default async function ShareableForecastPage({ params, searchParams }: Props) {
   const { location } = await params;
-  const query = forecastSlugToQuery(location);
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const queryParam = resolvedSearchParams.query;
+  const query =
+    typeof queryParam === "string" && queryParam.trim()
+      ? queryParam.trim()
+      : forecastSlugToQuery(location);
   const forecast = await getForecastForQuery(query);
 
   return (
