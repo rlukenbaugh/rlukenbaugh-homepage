@@ -87,6 +87,12 @@ export default async function RootLayout({
         />
         <Script
           async
+          crossOrigin="anonymous"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6653687154733344"
+          strategy="afterInteractive"
+        />
+        <Script
+          async
           src="https://plausible.io/js/pa-bdBlNherzlQSxM8cVjkWP.js"
           strategy="afterInteractive"
         />
