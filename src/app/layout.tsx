@@ -76,6 +76,12 @@ export default async function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
+      <head>
+        <meta
+          content="ca-pub-6653687154733344"
+          name="google-adsense-account"
+        />
+      </head>
       <body className="min-h-full">
         {content}
         <SiteFooter />
